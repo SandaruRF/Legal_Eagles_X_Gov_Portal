@@ -48,7 +48,7 @@ async def login_for_access_token(
     """
     Authenticate citizen and return a JWT access token.
     """
-    citizen = await db_citizen.get_citizen_by_email(db, email=form_data.username)
+    citizen = await db_citizen.get_citizen_by_identifier(db, identifier=form_data.username)
     if not citizen or not hashing.verify_password(form_data.password, citizen.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

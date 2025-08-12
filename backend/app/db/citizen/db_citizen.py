@@ -2,14 +2,35 @@ from prisma import Prisma
 from app.schemas.citizen import citizen_schema
 from app.core.hashing import get_password_hash
 
-async def get_citizen_by_email(db: Prisma, email: str):
+async def get_citizen_by_identifier(db: Prisma, identifier: str):
     """
-    Retrieves a citizen from the database by their email address.
+    Retrieves a citizen from the database by their email, NIC, or phone number.
     
     Args:
         db: The Prisma database client.
-        email: The citizen's email.
+        identifier: The user's login identifier (email, NIC, or phone number).
         
+    Returns:
+        The citizen object if found, otherwise None.
+    """
+    return await db.citizen.find_first(
+        where={
+            "OR": [
+                {"email": identifier},
+                {"nic_no": identifier},
+                {"phone_no": identifier},
+            ]
+        }
+    )
+
+async def get_citizen_by_email(db: Prisma, email: str):
+    """
+    Retrieves a citizen from the database by their email address.
+
+    Args:
+        db: The Prisma database client.
+        email: The citizen's email.
+
     Returns:
         The citizen object if found, otherwise None.
     """
