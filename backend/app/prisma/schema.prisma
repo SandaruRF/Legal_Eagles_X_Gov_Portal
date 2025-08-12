@@ -59,9 +59,9 @@ model Citizen {
 
 model KYC {
   kyc_id        String    @id @default(cuid())
-  nic_front_url String
-  nic_back_url  String
-  selfie_url    String
+  nic_front_url String?
+  nic_back_url  String?
+  selfie_url    String?
   status        KYCStatus @default(Pending)
   verified_at   DateTime?
   
