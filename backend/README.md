@@ -18,8 +18,8 @@ This project is built with a modern, scalable, and robust technology stack:
 * **Backend:** FastAPI  
 * **Database:** PostgreSQL (hosted on Supabase)  
 * **ORM:** Prisma Client for Python  
-* **Mobile App (Citizen):** React Native with Expo  
-* **Web App (Admin/Officer):** To be decided (e.g., React, Vue)
+* **Mobile App (Citizen):** Flutter
+* **Web App (Admin/Officer):** React
 
 ## **🏗️ Project Structure**
 
@@ -28,7 +28,6 @@ The backend is organized into modules to separate concerns, making the codebase 
 backend/  
 │  
 ├── app/  
-│   ├── \_\_pycache\_\_/  
 │   ├── core/               \# Core application logic (database, security)  
 │   ├── db/                 \# CRUD (database interaction) functions  
 │   │   ├── admin/  
@@ -59,7 +58,6 @@ Follow these instructions to set up and run the backend server on your local mac
 ### **Prerequisites**
 
 * Python 3.8+  
-* Poetry (recommended for managing Python dependencies) or pip  
 * A Supabase account
 
 ### **1\. Clone the Repository**
@@ -95,15 +93,14 @@ Your terminal prompt should now start with (venv), indicating the environment is
 ### **4\. Install Dependencies**
 
 With your virtual environment active, install the required packages.
-
-\# Or using pip  
+ 
 pip install \-r requirements.txt
 
 ### **5\. Create Database Migration**
 
 This command creates a migration file based on your schema.prisma changes and applies it to the database. This is the standard way to manage schema changes during development.
 
-*(Note: The \--schema flag points to the location of your schema file)*
+*(Note: The \--schema flag points to the location of the schema file)*
 
 prisma db push \--schema=./app/prisma/schema.prisma
 
