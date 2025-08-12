@@ -4,44 +4,18 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from prisma import Prisma
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.db.citizen import db_citizen
+from app.db.admin import db_admin
 from app.schemas.citizen import citizen_schema
+from app.schemas.admin import admin_schema
 
-# Create a CryptContext for hashing passwords.
-# bcrypt is a strong and widely used hashing algorithm.
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/citizens/login")
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verifies a plain-text password against a hashed password.
-    
-    Args:
-        plain_password: The password to verify.
-        hashed_password: The stored hashed password.
-        
-    Returns:
-        True if the passwords match, False otherwise.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password: str) -> str:
-    """
-    Hashes a plain-text password.
-    
-    Args:
-        password: The password to hash.
-        
-    Returns:
-        The hashed password as a string.
-    """
-    return pwd_context.hash(password)
+citizen_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/citizens/login")
+admin_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admins/login")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -64,7 +38,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Prisma = Depends(get_db)) -> citizen_schema.Citizen:
+async def get_current_user(token: str = Depends(citizen_oauth2_scheme), db: Prisma = Depends(get_db)) -> citizen_schema.Citizen:
     """
     Dependency to get the current user from a JWT token.
     
@@ -88,3 +62,25 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Prisma = Dep
     if user is None:
         raise credentials_exception
     return user
+
+async def get_current_admin(token: str = Depends(admin_oauth2_scheme), db: Prisma = Depends(get_db)) -> admin_schema.Admin:
+    """
+    Dependency to get the current admin from a JWT token.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate admin credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    admin = await db_admin.get_admin_by_email(db, email=email)
+    if admin is None:
+        raise credentials_exception
+    return admin

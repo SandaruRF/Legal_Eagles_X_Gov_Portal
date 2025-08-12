@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.schemas.citizen import citizen_schema
 from app.schemas import token_schema
 from app.db.citizen import db_citizen
-from app.core import security
+from app.core import auth, hashing
 from app.core.config import settings
 
 router = APIRouter(
@@ -49,7 +49,7 @@ async def login_for_access_token(
     Authenticate citizen and return a JWT access token.
     """
     citizen = await db_citizen.get_citizen_by_email(db, email=form_data.username)
-    if not citizen or not security.verify_password(form_data.password, citizen.password):
+    if not citizen or not hashing.verify_password(form_data.password, citizen.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -57,14 +57,14 @@ async def login_for_access_token(
         )
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
+    access_token = auth.create_access_token(
         data={"sub": citizen.email}, expires_delta=access_token_expires
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=citizen_schema.Citizen)
-async def read_users_me(current_user: citizen_schema.Citizen = Depends(security.get_current_user)):
+async def read_users_me(current_user: citizen_schema.Citizen = Depends(auth.get_current_user)):
     """
     Fetch the details of the currently authenticated citizen.
     
