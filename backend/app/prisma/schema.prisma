@@ -1,0 +1,187 @@
+
+// 1. Define the database connection (reads from .env file)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 2. Define the Prisma client generator for Python
+generator client {
+  provider  = "prisma-client-py"
+  interface = "asyncio"
+}
+
+// 3. Define Enums for status fields
+enum KYCStatus {
+  Pending
+  Verified
+  Rejected
+}
+
+enum VaultDocumentType {
+  NIC
+  Passport
+  License
+  BirthCertificate
+  Other
+}
+
+enum AdminRole {
+  Officer
+  Head
+}
+
+enum AppointmentStatus {
+  Booked
+  Confirmed
+  Completed
+  Cancelled
+  NoShow
+}
+
+// 4. Define Database Models
+
+model Citizen {
+  citizen_id   String        @id @default(cuid())
+  full_name    String
+  nic_no       String        @unique
+  phone_no     String        @unique
+  email        String        @unique
+  password     String        // Added password field
+  created_at   DateTime      @default(now())
+
+  kyc          KYC?
+  vault_docs   DigitalVaultDocument[]
+  appointments Appointment[]
+  filled_forms FilledForm[]
+  feedback     Feedback[]
+}
+
+model KYC {
+  kyc_id        String    @id @default(cuid())
+  nic_front_url String?
+  nic_back_url  String?
+  selfie_url    String?
+  status        KYCStatus @default(Pending)
+  verified_at   DateTime?
+  
+  citizen_id    String    @unique
+  citizen       Citizen   @relation(fields: [citizen_id], references: [citizen_id])
+
+  verified_by_id String?
+  verified_by    Admin?  @relation(fields: [verified_by_id], references: [admin_id])
+}
+
+model DigitalVaultDocument {
+  document_id   String            @id @default(cuid())
+  document_type VaultDocumentType
+  document_url  String
+  uploaded_at   DateTime          @default(now())
+
+  citizen_id    String
+  citizen       Citizen           @relation(fields: [citizen_id], references: [citizen_id])
+}
+
+model Department {
+  department_id String    @id @default(cuid())
+  name          String    @unique
+  description   String?
+
+  services      Service[]
+  admins        Admin[]
+}
+
+model Service {
+  service_id         String        @id @default(cuid())
+  name               String
+  description        String?
+  required_documents Json? // JSON object describing required docs
+
+  department_id      String
+  department         Department    @relation(fields: [department_id], references: [department_id])
+  
+  appointments       Appointment[]
+  form_templates     FormTemplate[]
+}
+
+model Admin {
+  admin_id    String      @id @default(cuid())
+  full_name   String
+  email       String      @unique
+  password    String      // Added password field
+  role        AdminRole   @default(Officer)
+  
+  department_id String
+  department    Department  @relation(fields: [department_id], references: [department_id])
+
+  verified_kycs KYC[]
+  appointments  Appointment[]
+}
+
+model Appointment {
+  appointment_id      String            @id @default(cuid())
+  appointment_datetime DateTime
+  status              AppointmentStatus @default(Booked)
+  reference_number    String            @unique @default(cuid()) // Or a custom generator
+  qr_code_data        String            @unique @default(cuid()) // Or a custom generator
+  created_at          DateTime          @default(now())
+
+  citizen_id          String
+  citizen             Citizen           @relation(fields: [citizen_id], references: [citizen_id])
+
+  service_id          String
+  service             Service           @relation(fields: [service_id], references: [service_id])
+
+  assigned_admin_id   String?
+  assigned_admin      Admin?            @relation(fields: [assigned_admin_id], references: [admin_id])
+
+  documents           AppointmentDocument[]
+  feedback            Feedback?
+}
+
+model AppointmentDocument {
+  appointment_doc_id String   @id @default(cuid())
+  document_name      String
+  document_url       String
+  uploaded_at        DateTime @default(now())
+
+  appointment_id     String
+  appointment        Appointment @relation(fields: [appointment_id], references: [appointment_id])
+}
+
+model FormTemplate {
+  form_id      String       @id @default(cuid())
+  form_name    String
+  template_url String // URL to a blank PDF or a template definition
+
+  service_id   String
+  service      Service      @relation(fields: [service_id], references: [service_id])
+
+  filled_forms FilledForm[]
+}
+
+model FilledForm {
+  filled_form_id    String   @id @default(cuid())
+  filled_data       Json
+  generated_pdf_url String?
+  created_at        DateTime @default(now())
+
+  form_id           String
+  form_template     FormTemplate @relation(fields: [form_id], references: [form_id])
+
+  citizen_id        String
+  citizen           Citizen      @relation(fields: [citizen_id], references: [citizen_id])
+}
+
+model Feedback {
+  feedback_id  String   @id @default(cuid())
+  rating       Int // Rating from 1 to 5
+  comment      String?
+  submitted_at DateTime @default(now())
+
+  appointment_id String  @unique
+  appointment    Appointment @relation(fields: [appointment_id], references: [appointment_id])
+
+  citizen_id     String
+  citizen        Citizen     @relation(fields: [citizen_id], references: [citizen_id])
+}
