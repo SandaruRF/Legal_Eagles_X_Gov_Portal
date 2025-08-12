@@ -47,6 +47,7 @@ model Citizen {
   nic_no       String        @unique
   phone_no     String        @unique
   email        String        @unique
+  password     String        // Added password field
   created_at   DateTime      @default(now())
 
   kyc          KYC?
@@ -107,6 +108,7 @@ model Admin {
   admin_id    String      @id @default(cuid())
   full_name   String
   email       String      @unique
+  password    String      // Added password field
   role        AdminRole   @default(Officer)
   
   department_id String

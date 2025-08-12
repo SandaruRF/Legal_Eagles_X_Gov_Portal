@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .core.database import connect_db, disconnect_db
-# In the future, you will import your API routers here
+
+from .routes.citizen import citizen_route
 
 
 @asynccontextmanager
@@ -24,6 +25,7 @@ app = FastAPI(
 )
 
 # --- API Routers ---
+app.include_router(citizen_route.router, prefix="/api")
 
 # A simple root endpoint for health checks
 @app.get("/", tags=["Health Check"])
