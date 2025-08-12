@@ -185,3 +185,29 @@ model Feedback {
   citizen_id     String
   citizen        Citizen     @relation(fields: [citizen_id], references: [citizen_id])
 }
+
+model WebPageRecord {
+  id              String   @id @default(cuid())
+  url             String   @unique
+  content_hash    String   // SHA-256 hash
+  last_checked    DateTime @default(now())
+  last_modified   DateTime @default(now()) @updatedAt
+  is_active       Boolean  @default(true)
+  content_preview String?  // First 500 chars
+  error_count     Int      @default(0)
+  created_at      DateTime @default(now())
+
+  changes ContentChangeLog[]
+}
+
+model ContentChangeLog {
+  id           String   @id @default(cuid())
+  url          String
+  old_hash     String?
+  new_hash     String
+  change_type  String   // 'new', 'updated', 'deleted'
+  detected_at  DateTime @default(now())
+
+  web_page_id  String?
+  web_page     WebPageRecord? @relation(fields: [web_page_id], references: [id])
+}
