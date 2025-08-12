@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from .core.database import connect_db, disconnect_db
 
 from .routes.citizen import citizen_route
+from .routes.citizen import citizen_kyc_route
+
 from .routes.admin import admin_route
 
 
@@ -28,6 +30,7 @@ app = FastAPI(
 # --- API Routers ---
 app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
+app.include_router(citizen_kyc_route.router, prefix="/api")
 
 # A simple root endpoint for health checks
 @app.get("/", tags=["Health Check"])

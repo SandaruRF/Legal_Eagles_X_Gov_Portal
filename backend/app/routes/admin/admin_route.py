@@ -13,7 +13,7 @@ from app.core.config import settings
 
 router = APIRouter(
     prefix="/admins",
-    tags=["Admins", "Authentication"]
+    tags=["Admins"]
 )
 
 @router.post("/register", response_model=admin_schema.Admin)
