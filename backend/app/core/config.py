@@ -17,9 +17,6 @@ class Settings(BaseSettings):
     CHROMADB_PORT: int = 8000
     CHROMADB_COLLECTION_NAME: str = "government_services_v1"
     
-    # OpenAI Configuration
-    OPENAI_API_KEY: str
-    
     # Web Monitoring Settings
     SCRAPING_INTERVAL_MINUTES: int = 30
     MAX_CONCURRENT_SCRAPES: int = 5
