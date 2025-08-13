@@ -1,4 +1,10 @@
 import React, { useState } from "react";
+import {
+    MdDashboard,
+    MdCalendarToday,
+    MdAnalytics,
+    MdFeedback,
+} from "react-icons/md";
 import Overview from "./Overview";
 import Appointments from "./Appointments";
 import Analytics from "./Analytics";
@@ -52,7 +58,8 @@ const Dashboard = () => {
                         }`}
                         onClick={() => setActiveTab("overview")}
                     >
-                        📊 Dashboard Overview
+                        <MdDashboard style={{ marginRight: "0.5rem" }} />
+                        Dashboard Overview
                     </button>
                     <button
                         className={`nav-item ${
@@ -60,7 +67,8 @@ const Dashboard = () => {
                         }`}
                         onClick={() => setActiveTab("appointments")}
                     >
-                        📅 Appointments
+                        <MdCalendarToday style={{ marginRight: "0.5rem" }} />
+                        Appointments
                     </button>
                     <button
                         className={`nav-item ${
@@ -68,7 +76,8 @@ const Dashboard = () => {
                         }`}
                         onClick={() => setActiveTab("analytics")}
                     >
-                        📈 Analytics
+                        <MdAnalytics style={{ marginRight: "0.5rem" }} />
+                        Analytics
                     </button>
                     <button
                         className={`nav-item ${
@@ -76,7 +85,8 @@ const Dashboard = () => {
                         }`}
                         onClick={() => setActiveTab("feedback")}
                     >
-                        💬 Feedback
+                        <MdFeedback style={{ marginRight: "0.5rem" }} />
+                        Feedback
                     </button>
                 </nav>
             </div>

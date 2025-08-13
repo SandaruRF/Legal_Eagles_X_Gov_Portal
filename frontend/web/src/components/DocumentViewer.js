@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MdDescription, MdCheck } from "react-icons/md";
 import appointmentDocuments from "../data/appointmentDocuments.json";
 
 const DocumentViewer = ({ appointmentId, isOpen, onClose }) => {
@@ -99,7 +100,12 @@ const DocumentViewer = ({ appointmentId, isOpen, onClose }) => {
                                                     )
                                                 }
                                             >
-                                                📄 View
+                                                <MdDescription
+                                                    style={{
+                                                        marginRight: "0.25rem",
+                                                    }}
+                                                />
+                                                View
                                             </button>
 
                                             {doc.status !== "Verified" && (
@@ -112,7 +118,13 @@ const DocumentViewer = ({ appointmentId, isOpen, onClose }) => {
                                                         )
                                                     }
                                                 >
-                                                    ✓ Approve
+                                                    <MdCheck
+                                                        style={{
+                                                            marginRight:
+                                                                "0.25rem",
+                                                        }}
+                                                    />
+                                                    Approve
                                                 </button>
                                             )}
 

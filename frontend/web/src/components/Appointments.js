@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MdDescription, MdCheck, MdEmail } from "react-icons/md";
 import appointmentsData from "../data/appointments.json";
 import DocumentViewer from "./DocumentViewer";
 
@@ -330,7 +331,13 @@ const Appointments = ({ departmentId }) => {
                                                             "#4E6E63";
                                                     }}
                                                 >
-                                                    📄 View Documents
+                                                    <MdDescription
+                                                        style={{
+                                                            marginRight:
+                                                                "0.25rem",
+                                                        }}
+                                                    />
+                                                    View Documents
                                                 </button>
                                             </td>
                                             <td>
@@ -375,7 +382,13 @@ const Appointments = ({ departmentId }) => {
                                                                     "#28a745";
                                                             }}
                                                         >
-                                                            ✓ Confirm
+                                                            <MdCheck
+                                                                style={{
+                                                                    marginRight:
+                                                                        "0.25rem",
+                                                                }}
+                                                            />
+                                                            Confirm
                                                         </button>
                                                     )}
 
@@ -413,7 +426,13 @@ const Appointments = ({ departmentId }) => {
                                                                 "#007bff";
                                                         }}
                                                     >
-                                                        📧 Message
+                                                        <MdEmail
+                                                            style={{
+                                                                marginRight:
+                                                                    "0.25rem",
+                                                            }}
+                                                        />
+                                                        Message
                                                     </button>
 
                                                     <select

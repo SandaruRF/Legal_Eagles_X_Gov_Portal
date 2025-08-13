@@ -13,6 +13,7 @@ import {
     Pie,
     Cell,
 } from "recharts";
+import { MdTrendingUp, MdWarning, MdRocket } from "react-icons/md";
 import appointmentsData from "../data/appointments.json";
 import analyticsData from "../data/analytics.json";
 
@@ -234,9 +235,12 @@ const Analytics = ({ departmentId }) => {
                                 style={{
                                     color: "#4E6E63",
                                     marginBottom: "0.5rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
                                 }}
                             >
-                                📈 Peak Hours
+                                <MdTrendingUp /> Peak Hours
                             </h4>
                             <p
                                 style={{
@@ -258,9 +262,12 @@ const Analytics = ({ departmentId }) => {
                                 style={{
                                     color: "#FEB600",
                                     marginBottom: "0.5rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
                                 }}
                             >
-                                ⚠️ No-Show Analysis
+                                <MdWarning /> No-Show Analysis
                             </h4>
                             <p
                                 style={{
@@ -282,9 +289,12 @@ const Analytics = ({ departmentId }) => {
                                 style={{
                                     color: "#28a745",
                                     marginBottom: "0.5rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
                                 }}
                             >
-                                🚀 Efficiency Tips
+                                <MdRocket /> Efficiency Tips
                             </h4>
                             <ul
                                 style={{
