@@ -29,31 +29,6 @@ const AdminManagement = ({ departmentId }) => {
 
     const { user, token } = useAuth();
 
-    // Mock data for development - replace with actual API calls
-    const mockAdmins = [
-        {
-            admin_id: "admin_001",
-            full_name: "Officer Kamal Perera",
-            email: "kamal.perera@dmvt.gov.lk",
-            role: "Officer",
-            department_id: "dept_001",
-        },
-        {
-            admin_id: "admin_002",
-            full_name: "Manager Saman Silva",
-            email: "saman.silva@dmvt.gov.lk",
-            role: "Manager",
-            department_id: "dept_001",
-        },
-        {
-            admin_id: "admin_003",
-            full_name: "Director Kumari Fernando",
-            email: "kumari.fernando@dmvt.gov.lk",
-            role: "Head",
-            department_id: "dept_001",
-        },
-    ];
-
     useEffect(() => {
         fetchAdmins();
     }, [departmentId]);
@@ -61,12 +36,14 @@ const AdminManagement = ({ departmentId }) => {
     const fetchAdmins = async () => {
         try {
             setLoading(true);
-            // TODO: Replace with actual API call
-            // const response = await fetch(`/api/admins?department_id=${departmentId}`, {
-            //     headers: { 'Authorization': `Bearer ${token}` }
-            // });
-
-            // Mock implementation
+            // Fetch admins by department from backend API
+            const response = await fetch(`/api/admins?department_id=${departmentId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error("Failed to fetch admins");
+            const data = await response.json();
+            setAdmins(data);
+            setLoading(false);
             setTimeout(() => {
                 const departmentAdmins = mockAdmins.filter(
                     (admin) => admin.department_id === departmentId

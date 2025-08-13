@@ -10,30 +10,54 @@ import {
     MdClose,
 } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
+import config from "../config/api";
 import Overview from "./Overview";
 import Appointments from "./Appointments";
 import Analytics from "./Analytics";
 import Feedback from "./Feedback";
 import AdminManagement from "./AdminManagement";
-import currentUserData from "../data/currentUser.json";
 import departmentsData from "../data/departments.json";
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState("overview");
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user, logout } = useAuth();
+    const [department, setDepartment] = useState("Unknown Department");
+    const [loading, setLoading] = useState(true);
 
-    // Use authenticated user data, fallback to demo data if needed
-    const currentUser = user || currentUserData[0];
+    const { user, logout } = useAuth();
+    const { API_BASE_URL, endpoints } = config();
+
+    const currentUser = user;
 
     // Get department name from departments data
-    const department = departmentsData.find(
-        (dept) => dept.department_id === currentUser.department_id
-    );
-    const departmentName = department
-        ? department.name
-        : currentUser.department_name || "Unknown Department";
+    useEffect(() => {
+        // Check if user is logged in on app load
+        if (token) {
+            fetchDepartment();
+        } else {
+            setLoading(false);
+        }
+    }, [token]);
+
+    const fetchDepartment = async () => {
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}${endpoints.department_by_id}${currentUser.department_id}`
+            );
+            const departmentData = await response.json();
+
+            if (response.ok) {
+                setDepartment(departmentData);
+            }
+        } catch (error) {
+            console.error("Failed to fetch department:", error);
+            setToken(null);
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLogout = () => {
         setShowLogoutModal(true);

@@ -7,7 +7,7 @@ from .routes.citizen import citizen_route
 from .routes.citizen import citizen_kyc_route
 
 from .routes.admin import admin_route
-
+from .routes.admin import department_route
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,6 +42,7 @@ app.add_middleware(
 app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
 app.include_router(citizen_kyc_route.router, prefix="/api")
+app.include_router(department_route.router, prefix="/api")
 
 # A simple root endpoint for health checks
 @app.get("/", tags=["Health Check"])

@@ -20,6 +20,9 @@ const config = {
         appointments: "/api/appointments",
         analytics: "/api/analytics",
         feedback: "/api/feedback",
+
+        // Department endpoints
+        department_by_id: "/api/departments/"
     },
 
     // Request timeout in milliseconds
