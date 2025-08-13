@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .core.database import connect_db, disconnect_db
 
 from .routes.citizen import citizen_route
@@ -19,12 +20,22 @@ async def lifespan(app: FastAPI):
     # Code to be executed after the application stops
     await disconnect_db()
 
+
 # Create the FastAPI app instance with the lifespan manager
 app = FastAPI(
     title="Gov-Portal API",
     description="The official backend API for the Gov-Portal government service portal.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- API Routers ---

@@ -4,16 +4,58 @@ import {
     MdCalendarToday,
     MdAnalytics,
     MdFeedback,
+    MdLogout,
+    MdPeople,
+    MdMenu,
+    MdClose,
 } from "react-icons/md";
+import { useAuth } from "../contexts/AuthContext";
 import Overview from "./Overview";
 import Appointments from "./Appointments";
 import Analytics from "./Analytics";
 import Feedback from "./Feedback";
+import AdminManagement from "./AdminManagement";
 import currentUserData from "../data/currentUser.json";
+import departmentsData from "../data/departments.json";
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState("overview");
-    const currentUser = currentUserData[0]; // For demo purposes, using first user
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { user, logout } = useAuth();
+
+    // Use authenticated user data, fallback to demo data if needed
+    const currentUser = user || currentUserData[0];
+
+    // Get department name from departments data
+    const department = departmentsData.find(
+        (dept) => dept.department_id === currentUser.department_id
+    );
+    const departmentName = department
+        ? department.name
+        : currentUser.department_name || "Unknown Department";
+
+    const handleLogout = () => {
+        setShowLogoutModal(true);
+    };
+
+    const confirmLogout = () => {
+        logout();
+        setShowLogoutModal(false);
+    };
+
+    const cancelLogout = () => {
+        setShowLogoutModal(false);
+    };
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const handleNavClick = (tab) => {
+        setActiveTab(tab);
+        setIsMobileMenuOpen(false); // Close mobile menu when navigation item is clicked
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -27,6 +69,10 @@ const Dashboard = () => {
                 return <Analytics departmentId={currentUser.department_id} />;
             case "feedback":
                 return <Feedback departmentId={currentUser.department_id} />;
+            case "admin-management":
+                return (
+                    <AdminManagement departmentId={currentUser.department_id} />
+                );
             default:
                 return <Overview departmentId={currentUser.department_id} />;
         }
@@ -34,13 +80,16 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard">
+            {/* Mobile Menu Toggle */}
+            <button className="mobile-menu-toggle" onClick={toggleMobileMenu}>
+                {isMobileMenuOpen ? <MdClose /> : <MdMenu />}
+            </button>
+
             {/* Sidebar */}
-            <div className="sidebar">
+            <div className={`sidebar ${isMobileMenuOpen ? "mobile-open" : ""}`}>
                 <div className="sidebar-header">
                     <h1>Gov Portal</h1>
-                    <div className="department-name">
-                        {currentUser.department_name}
-                    </div>
+                    <div className="department-name">{departmentName}</div>
                     <div
                         style={{
                             fontSize: "0.8rem",
@@ -56,7 +105,7 @@ const Dashboard = () => {
                         className={`nav-item ${
                             activeTab === "overview" ? "active" : ""
                         }`}
-                        onClick={() => setActiveTab("overview")}
+                        onClick={() => handleNavClick("overview")}
                     >
                         <MdDashboard style={{ marginRight: "0.5rem" }} />
                         Dashboard Overview
@@ -65,7 +114,7 @@ const Dashboard = () => {
                         className={`nav-item ${
                             activeTab === "appointments" ? "active" : ""
                         }`}
-                        onClick={() => setActiveTab("appointments")}
+                        onClick={() => handleNavClick("appointments")}
                     >
                         <MdCalendarToday style={{ marginRight: "0.5rem" }} />
                         Appointments
@@ -74,7 +123,7 @@ const Dashboard = () => {
                         className={`nav-item ${
                             activeTab === "analytics" ? "active" : ""
                         }`}
-                        onClick={() => setActiveTab("analytics")}
+                        onClick={() => handleNavClick("analytics")}
                     >
                         <MdAnalytics style={{ marginRight: "0.5rem" }} />
                         Analytics
@@ -83,16 +132,79 @@ const Dashboard = () => {
                         className={`nav-item ${
                             activeTab === "feedback" ? "active" : ""
                         }`}
-                        onClick={() => setActiveTab("feedback")}
+                        onClick={() => handleNavClick("feedback")}
                     >
                         <MdFeedback style={{ marginRight: "0.5rem" }} />
                         Feedback
+                    </button>
+
+                    {/* Admin Management - Only for Head role */}
+                    {currentUser.role === "Head" && (
+                        <button
+                            className={`nav-item ${
+                                activeTab === "admin-management" ? "active" : ""
+                            }`}
+                            onClick={() => handleNavClick("admin-management")}
+                        >
+                            <MdPeople style={{ marginRight: "0.5rem" }} />
+                            Admin Management
+                        </button>
+                    )}
+
+                    {/* Logout Button */}
+                    <button
+                        className="nav-item logout-btn"
+                        onClick={handleLogout}
+                        style={{
+                            marginTop: "auto",
+                            backgroundColor: "#dc3545",
+                            borderColor: "#dc3545",
+                        }}
+                    >
+                        <MdLogout style={{ marginRight: "0.5rem" }} />
+                        Logout
                     </button>
                 </nav>
             </div>
 
             {/* Main Content */}
             <div className="main-content">{renderContent()}</div>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <div className="modal-header">
+                            <h3>Confirm Logout</h3>
+                        </div>
+                        <div className="modal-body">
+                            <p>
+                                Are you sure you want to logout from the
+                                Government Portal?
+                            </p>
+                            <p className="logout-warning">
+                                You will need to login again to access the
+                                system.
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={cancelLogout}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={confirmLogout}
+                            >
+                                <MdLogout style={{ marginRight: "0.5rem" }} />
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -33,9 +33,12 @@ const Analytics = ({ departmentId }) => {
     }));
 
     // Calculate peak hours
-    const peakHour = departmentAnalytics.reduce((max, current) =>
-        current.appointments > max.appointments ? current : max
-    );
+    const peakHour =
+        departmentAnalytics.length > 0
+            ? departmentAnalytics.reduce((max, current) =>
+                  current.appointments > max.appointments ? current : max
+              )
+            : { hour: "9:00 AM", appointments: 0 };
 
     // Prepare status distribution data
     const statusData = [
@@ -79,10 +82,13 @@ const Analytics = ({ departmentId }) => {
     // Calculate metrics
     const totalAppointments = departmentAppointments.length;
     const avgProcessingTime = "45 min"; // Mock data
-    const totalWorkload = departmentAnalytics.reduce(
-        (sum, data) => sum + data.appointments,
-        0
-    );
+    const totalWorkload =
+        departmentAnalytics.length > 0
+            ? departmentAnalytics.reduce(
+                  (sum, data) => sum + data.appointments,
+                  0
+              )
+            : 0;
     const noShowRate =
         totalAppointments > 0
             ? (
