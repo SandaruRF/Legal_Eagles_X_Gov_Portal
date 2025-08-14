@@ -35,7 +35,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         // Back button
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: Container(
+                          child: SizedBox(
                             width: 17.5,
                             height: 20,
                             child: const Icon(
