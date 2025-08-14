@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr
 from prisma.enums import AdminRole
-import datetime
 
 class AdminBase(BaseModel):
     """Base schema with common admin fields."""
@@ -19,3 +18,7 @@ class Admin(AdminBase):
 
     class Config:
         from_attributes = True
+
+class FormTemplateRequest(BaseModel):
+    form_name: str
+    form_template: dict

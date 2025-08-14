@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Request
+from datetime import datetime
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 from app.core.database import db
 from app.core.auth import get_current_user
@@ -12,8 +12,6 @@ router = APIRouter(
     tags=["Appointments"]
 )
 
-
-# Get Available Slots
 @router.get("/slots")
 async def get_available_slots_endpoint(
     service_id: str,
@@ -29,7 +27,20 @@ async def get_available_slots_endpoint(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
+@router.get("/locations/{service_id}")
+async def get_locations_by_service_id(service_id: str):
+    """
+    Returns a list of all locations related to the given service_id.
+    """
+    locations = await db.location.find_many(where={"service_id": service_id})
+    
+    result = []
+    for location in locations:
+        result.append({
+            "location_id": getattr(location, "id", ""),
+            "address": getattr(location, "address", "")
+        })
+    return result
 
 @router.post("/book")
 async def book_appointment_endpoint(
@@ -39,7 +50,6 @@ async def book_appointment_endpoint(
     current_user: citizen_schema.Citizen = Depends(get_current_user)
 ):
     try:
-        # Collect raw file bytes and names, pass to service
         uploaded_documents = {}
         for file in files:
             file_content = await file.read()
@@ -92,11 +102,9 @@ async def reschedule_appointment_endpoint(
     current_user: citizen_schema.Citizen = Depends(get_current_user)
 ):
     try:
-        # Fetch appointment
         appointment = await db.appointment.find_unique(where={"appointment_id": appointment_id})
         if not appointment:
             raise HTTPException(status_code=404, detail="Appointment not found")
-        # Check time constraint
         appt_dt = appointment.appointment_datetime
         now_dt = datetime.now(appt_dt.tzinfo) if appt_dt.tzinfo else datetime.now()
         if (appt_dt - now_dt).total_seconds() < 48*3600:
@@ -104,11 +112,9 @@ async def reschedule_appointment_endpoint(
                 "status": "failed",
                 "message": "Rescheduling only allowed more than 48 hours before appointment"
             }, status_code=400)
-        # Fetch new slot
         slot = await db.timeslot.find_unique(where={"timeslot_id": slot_id})
         if not slot:
             raise HTTPException(status_code=404, detail="New slot not found")
-        # Update appointment
         await db.appointment.update(
             where={"appointment_id": appointment_id},
             data={
@@ -121,7 +127,7 @@ async def reschedule_appointment_endpoint(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Cancel Appointment
+
 @router.put("/{appointment_id}/cancel")
 async def cancel_appointment_endpoint(
     appointment_id: str,
@@ -131,8 +137,6 @@ async def cancel_appointment_endpoint(
         appointment = await db.appointment.find_unique(where={"appointment_id": appointment_id})
         if not appointment:
             raise HTTPException(status_code=404, detail="Appointment not found")
-        # Check time constraint
-        # Ensure both datetimes are naive or both are aware
         appt_dt = appointment.appointment_datetime
         now_dt = datetime.now(appt_dt.tzinfo) if appt_dt.tzinfo else datetime.now()
         if (appt_dt - now_dt).total_seconds() < 48*3600:

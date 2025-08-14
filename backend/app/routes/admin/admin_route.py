@@ -4,6 +4,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from prisma import Prisma
 from prisma.errors import UniqueViolationError
 from fastapi.responses import JSONResponse
+from fastapi import UploadFile, File
+from pydantic import BaseModel
+from fastapi import Body, Form
+import json
+
 
 from app.core.database import get_db
 from app.core.database import db
@@ -122,3 +127,43 @@ async def update_appointment_status_admin(
         return JSONResponse(content={"status": "success", "message": f"Appointment status updated to {status}."})
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{service_id}/store-form-template")
+async def store_form_template_endpoint(
+    service_id: str,
+    request: str = Body(...), # JSON string of FormTemplateRequest
+    template_file: UploadFile = File(None),
+    current_admin: admin_schema.Admin = Depends(auth.get_current_admin)
+):
+    """
+    Stores a new form template in the FilledTemplate table.
+    If a template file is provided, uploads it to Supabase and stores the URL.
+    """
+    import json
+    try:
+        request_dict = json.loads(request)
+        validated = admin_schema.FormTemplateRequest(**request_dict)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request format: {e}")
+    template_url = None
+    template_bytes = None
+    template_filename = None
+    if template_file:
+        template_bytes = await template_file.read()
+        template_filename = template_file.filename
+        from app.core.supabase_client import supabase
+        BUCKET_NAME = "gov-portal-form-templates"
+        file_path = template_filename
+        supabase.storage.from_(BUCKET_NAME).upload(file_path, template_bytes, {"content-type": "application/pdf", "x-upsert": "true"})
+        template_url = supabase.storage.from_(BUCKET_NAME).get_public_url(file_path)
+    # Serialize form_template as JSON string before saving
+    form_template_json = json.dumps(validated.form_template)
+    new_template = await db.formtemplate.create(
+        data={
+            "form_name": validated.form_name,
+            "service_id": service_id,
+            "form_template": form_template_json,
+            "template_url": template_url
+        }
+    )
+    return JSONResponse(content={"status": "success", "form_id": new_template.form_id})
