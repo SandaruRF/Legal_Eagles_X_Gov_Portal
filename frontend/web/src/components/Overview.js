@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     LineChart,
     Line,
@@ -10,53 +10,121 @@ import {
     BarChart,
     Bar,
 } from "recharts";
-import appointmentsData from "../data/appointments.json";
-import analyticsData from "../data/analytics.json";
-import feedbackData from "../data/feedback.json";
+import { MdRefresh } from "react-icons/md";
+import { useAuth } from "../contexts/AuthContext";
+import config from "../config/api";
 
 const Overview = ({ departmentId }) => {
-    // Filter data for current department
-    const departmentAppointments = appointmentsData.filter(
-        (apt) => apt.department_id === departmentId
-    );
-    const departmentAnalytics = analyticsData.filter(
-        (data) => data.department_id === departmentId
-    );
-    const departmentFeedback = feedbackData.filter(
-        (fb) => fb.department_id === departmentId
-    );
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    // Calculate stats
-    const totalAppointments = departmentAppointments.length;
-    const confirmedAppointments = departmentAppointments.filter(
-        (apt) => apt.status === "Confirmed"
-    ).length;
-    const completedAppointments = departmentAppointments.filter(
-        (apt) => apt.status === "Completed"
-    ).length;
-    const noShowAppointments = departmentAppointments.filter(
-        (apt) => apt.status === "NoShow"
-    ).length;
+    const { token } = useAuth();
+    const { API_BASE_URL } = config;
 
-    // Calculate average rating
-    const avgRating =
-        departmentFeedback.length > 0
-            ? (
-                  departmentFeedback.reduce((sum, fb) => sum + fb.rating, 0) /
-                  departmentFeedback.length
-              ).toFixed(1)
-            : 0;
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                setError("");
 
-    // Prepare hourly chart data
-    const hourlyData = departmentAnalytics.map((data) => ({
-        hour: data.hour,
-        appointments: data.appointments,
-    }));
+                const response = await fetch(
+                    `${API_BASE_URL}/api/admin/dashboard/overview`,
+                    {
+                        headers: config.getAuthHeaders(token),
+                    }
+                );
 
-    // Get recent appointments
-    const recentAppointments = departmentAppointments
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 5);
+                if (!response.ok) {
+                    throw new Error(
+                        `Failed to fetch dashboard data: ${response.status}`
+                    );
+                }
+
+                const data = await response.json();
+                setDashboardData(data);
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+                setError("Failed to load dashboard data. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, [departmentId, token, API_BASE_URL]);
+
+    // Loading state
+    if (loading) {
+        return (
+            <div>
+                <div className="content-header">
+                    <h2>Dashboard Overview</h2>
+                    <p className="content-subtitle">
+                        Welcome back! Here's what's happening in your department
+                        today.
+                    </p>
+                </div>
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        minHeight: "300px",
+                        flexDirection: "column",
+                        gap: "1rem",
+                    }}
+                >
+                    <MdRefresh
+                        style={{
+                            fontSize: "3rem",
+                            color: "#4E6E63",
+                            animation: "spin 1s linear infinite",
+                        }}
+                    />
+                    <p style={{ color: "#6c757d", fontSize: "1.1rem" }}>
+                        Loading dashboard data...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div>
+                <div className="content-header">
+                    <h2>Dashboard Overview</h2>
+                    <p className="content-subtitle">
+                        Welcome back! Here's what's happening in your department
+                        today.
+                    </p>
+                </div>
+                <div className="error-container">
+                    <p className="error-message">
+                        Error loading dashboard: {error}
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="retry-btn"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Extract data from API response
+    const {
+        appointment_stats,
+        hourly_distribution,
+        recent_appointments,
+        feedback_stats,
+        performance_metrics,
+        department_name,
+    } = dashboardData;
 
     const getStatusBadgeClass = (status) => {
         return `status-badge status-${status.toLowerCase().replace(" ", "")}`;
@@ -67,7 +135,7 @@ const Overview = ({ departmentId }) => {
             <div className="content-header">
                 <h2>Dashboard Overview</h2>
                 <p className="content-subtitle">
-                    Welcome back! Here's what's happening in your department
+                    Welcome back! Here's what's happening in {department_name}{" "}
                     today.
                 </p>
             </div>
@@ -76,25 +144,33 @@ const Overview = ({ departmentId }) => {
             <div className="stats-grid">
                 <div className="stat-card appointments">
                     <h3>Total Appointments</h3>
-                    <div className="stat-value">{totalAppointments}</div>
+                    <div className="stat-value">
+                        {appointment_stats.total_appointments}
+                    </div>
                     <p className="stat-description">All time appointments</p>
                 </div>
 
                 <div className="stat-card confirmed">
                     <h3>Confirmed Today</h3>
-                    <div className="stat-value">{confirmedAppointments}</div>
+                    <div className="stat-value">
+                        {appointment_stats.confirmed_appointments}
+                    </div>
                     <p className="stat-description">Ready for processing</p>
                 </div>
 
                 <div className="stat-card completed">
                     <h3>Completed</h3>
-                    <div className="stat-value">{completedAppointments}</div>
+                    <div className="stat-value">
+                        {appointment_stats.completed_appointments}
+                    </div>
                     <p className="stat-description">Successfully processed</p>
                 </div>
 
                 <div className="stat-card no-show">
                     <h3>No Shows</h3>
-                    <div className="stat-value">{noShowAppointments}</div>
+                    <div className="stat-value">
+                        {appointment_stats.no_show_appointments}
+                    </div>
                     <p className="stat-description">Missed appointments</p>
                 </div>
             </div>
@@ -105,7 +181,7 @@ const Overview = ({ departmentId }) => {
                 <div className="chart-card">
                     <h3>Today's Appointment Distribution</h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={hourlyData}>
+                        <BarChart data={hourly_distribution}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="hour" />
                             <YAxis />
@@ -119,7 +195,7 @@ const Overview = ({ departmentId }) => {
                 <div className="chart-card">
                     <h3>Recent Appointments</h3>
                     <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                        {recentAppointments.map((appointment) => (
+                        {recent_appointments.map((appointment) => (
                             <div
                                 key={appointment.appointment_id}
                                 style={{
@@ -162,6 +238,17 @@ const Overview = ({ departmentId }) => {
                                 </span>
                             </div>
                         ))}
+                        {recent_appointments.length === 0 && (
+                            <div
+                                style={{
+                                    padding: "2rem",
+                                    textAlign: "center",
+                                    color: "#666",
+                                }}
+                            >
+                                No recent appointments found
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -176,10 +263,10 @@ const Overview = ({ departmentId }) => {
                             className="stat-value"
                             style={{ color: "#8C1F28" }}
                         >
-                            {avgRating}/5.0
+                            {feedback_stats.average_rating}/5.0
                         </div>
                         <p className="stat-description">
-                            Based on {departmentFeedback.length} reviews
+                            Based on {feedback_stats.total_feedback} reviews
                         </p>
                     </div>
 
@@ -189,14 +276,7 @@ const Overview = ({ departmentId }) => {
                             className="stat-value"
                             style={{ color: "#28a745" }}
                         >
-                            {totalAppointments > 0
-                                ? Math.round(
-                                      (completedAppointments /
-                                          totalAppointments) *
-                                          100
-                                  )
-                                : 0}
-                            %
+                            {performance_metrics.processing_efficiency}%
                         </div>
                         <p className="stat-description">Completion rate</p>
                     </div>
@@ -207,13 +287,7 @@ const Overview = ({ departmentId }) => {
                             className="stat-value"
                             style={{ color: "#8C1F28" }}
                         >
-                            {totalAppointments > 0
-                                ? Math.round(
-                                      (noShowAppointments / totalAppointments) *
-                                          100
-                                  )
-                                : 0}
-                            %
+                            {performance_metrics.no_show_rate}%
                         </div>
                         <p className="stat-description">Missed appointments</p>
                     </div>
