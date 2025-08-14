@@ -9,54 +9,6 @@ class HomePageSignedIn extends StatefulWidget {
 }
 
 class _HomePageSignedInState extends State<HomePageSignedIn> {
-  final TextEditingController _chatController = TextEditingController();
-  final FocusNode _chatFocusNode = FocusNode();
-  bool _showDropdown = false;
-
-  final List<String> _recentlyAskedQuestions = [
-    'How to apply for a new passport?',
-    'What documents needed for birth certificate?',
-    'How to renew driving license online?',
-    'What are the visa requirements for Sri Lanka?',
-    'How to register a business in Sri Lanka?',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _chatFocusNode.addListener(() {
-      setState(() {
-        _showDropdown = _chatFocusNode.hasFocus;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _chatController.dispose();
-    _chatFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _sendMessage() {
-    if (_chatController.text.trim().isEmpty) return;
-
-    String message = _chatController.text.trim();
-    _chatController.clear();
-    _chatFocusNode.unfocus();
-
-    // Navigate to chat interface with the message
-    Navigator.pushNamed(context, '/chat_interface', arguments: message);
-  }
-
-  void _selectQuestion(String question) {
-    _chatController.text = question;
-    _chatFocusNode.unfocus();
-    setState(() {
-      _showDropdown = false;
-    });
-  }
-
   void _navigateToChat(String question) {
     // Navigate directly to chat interface with the question
     Navigator.pushNamed(context, '/chat_interface', arguments: question);
@@ -309,139 +261,67 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
 
                         const SizedBox(height: 16),
 
-                        // Input and send button with dropdown
-                        Column(
+                        // Input and send button
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 38,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/government_assistant',
+                                  );
+                                },
+                                child: Container(
+                                  height: 38,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFFD4D4D4),
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(0xFFD4D4D4),
-                                      ),
-                                    ),
-                                    child: TextField(
-                                      controller: _chatController,
-                                      focusNode: _chatFocusNode,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Type your question...',
-                                        hintStyle: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          color: Color(0xFFADAEBC),
-                                          height: 1.43,
-                                        ),
-                                        border: InputBorder.none,
-                                        contentPadding: EdgeInsets.zero,
-                                      ),
-                                      style: const TextStyle(
+                                  ),
+                                  child: const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Type your question...',
+                                      style: TextStyle(
                                         fontFamily: 'Inter',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w400,
-                                        color: Color(0xFF171717),
+                                        color: Color(0xFFADAEBC),
                                         height: 1.43,
                                       ),
-                                      onSubmitted: (_) => _sendMessage(),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: _sendMessage,
-                                  child: Container(
-                                    width: 48,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF5B00),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      Icons.send,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // Dropdown for recently asked questions
-                            if (_showDropdown &&
-                                _recentlyAskedQuestions.isNotEmpty)
-                              Container(
-                                margin: const EdgeInsets.only(top: 8),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: const Color(0xFFE5E5E5),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Recently Asked Questions',
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF737373),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ...(_recentlyAskedQuestions
-                                        .take(3)
-                                        .map(
-                                          (question) => GestureDetector(
-                                            onTap:
-                                                () => _selectQuestion(question),
-                                            child: Container(
-                                              width: double.infinity,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
-                                                  ),
-                                              decoration: const BoxDecoration(
-                                                border: Border(
-                                                  bottom: BorderSide(
-                                                    color: Color(0xFFF5F5F5),
-                                                    width: 1,
-                                                  ),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                question,
-                                                style: const TextStyle(
-                                                  fontFamily: 'Inter',
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w400,
-                                                  color: Color(0xFF404040),
-                                                  height: 1.2,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        )),
-                                  ],
                                 ),
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/government_assistant',
+                                );
+                              },
+                              child: Container(
+                                width: 48,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF5B00),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.send,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -601,42 +481,6 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
 
                   const SizedBox(height: 18),
 
-                  // Recently Asked Questions section
-                  const Text(
-                    'Recently Asked Questions',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF171717),
-                      height: 1.21,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Question cards
-                  _buildQuestionCard(
-                    'How to apply for a new passport?',
-                    '2 hours ago',
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  _buildQuestionCard(
-                    'What documents needed for birth certificate?',
-                    '5 hours ago',
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  _buildQuestionCard(
-                    'How to renew driving license online?',
-                    '1 day ago',
-                  ),
-
-                  const SizedBox(height: 18),
-
                   // Government Sectors section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -724,6 +568,42 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                     ],
                   ),
 
+                  const SizedBox(height: 18),
+
+                  // Recently Asked Questions section
+                  const Text(
+                    'Recently Asked Questions',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF171717),
+                      height: 1.21,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Question cards
+                  _buildQuestionCard(
+                    'How to apply for a new passport?',
+                    '2 hours ago',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildQuestionCard(
+                    'What documents needed for birth certificate?',
+                    '5 hours ago',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildQuestionCard(
+                    'How to renew driving license online?',
+                    '1 day ago',
+                  ),
+
                   const SizedBox(height: 100), // Space for bottom navigation
                 ],
               ),
@@ -752,7 +632,9 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
               icon: Icons.search,
               label: 'Search',
               isSelected: false,
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, '/search');
+              },
             ),
             _buildNavItem(
               icon: Icons.notifications,

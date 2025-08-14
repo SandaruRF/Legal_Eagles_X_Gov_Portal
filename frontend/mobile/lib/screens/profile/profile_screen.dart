@@ -199,21 +199,27 @@ class ProfileScreen extends StatelessWidget {
                           icon: Icons.bookmark,
                           iconColor: const Color(0xFF8C1F28),
                           title: 'My Booking',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.pushNamed(context, '/my_bookings');
+                          },
                         ),
                         const SizedBox(height: 12),
                         _buildActionButton(
                           icon: Icons.history,
                           iconColor: const Color(0xFF4E6E63),
                           title: 'Past Bookings',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.pushNamed(context, '/past_bookings');
+                          },
                         ),
                         const SizedBox(height: 12),
                         _buildActionButton(
                           icon: Icons.assignment,
                           iconColor: const Color(0xFFFF5B00),
                           title: 'Complete Your Incomplete Bookings',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.pushNamed(context, '/my_bookings');
+                          },
                         ),
                       ],
                     ),
