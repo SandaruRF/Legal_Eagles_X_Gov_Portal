@@ -54,7 +54,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'Triathalon Gov Portal',
       theme: ThemeData(primarySwatch: Colors.orange),
-      initialRoute: '/home_signed_in',
+      initialRoute: '/onboarding1',
       routes: {
         '/onboarding1': (context) => const OnboardingScreen(),
         '/onboarding2': (context) => const OnboardingScreen2(),
