@@ -142,7 +142,7 @@ model Appointment {
   appointment_datetime DateTime
   status               AppointmentStatus @default(Booked)
   reference_number     String            @unique @default(cuid()) // Or a custom generator
-  qr_code_data         String            @unique @default(cuid()) // Or a custom generator
+  // qr_code_data         String            @unique @default(cuid()) // Or a custom generator - REMOVED: Column doesn't exist in database
   created_at           DateTime          @default(now())
 
   citizen_id String

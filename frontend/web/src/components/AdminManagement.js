@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     MdAdd,
     MdEdit,
@@ -34,12 +34,7 @@ const AdminManagement = ({ departmentId }) => {
     const { user, token } = useAuth();
     const { API_BASE_URL, endpoints } = config;
 
-    useEffect(() => {
-        fetchAdmins();
-        fetchDepartment();
-    }, [departmentId]);
-
-    const fetchDepartment = async () => {
+    const fetchDepartment = useCallback(async () => {
         try {
             const response = await fetch(
                 `${API_BASE_URL}${endpoints.department_by_id}${departmentId}`,
@@ -55,9 +50,9 @@ const AdminManagement = ({ departmentId }) => {
         } catch (error) {
             console.error("Error fetching department:", error);
         }
-    };
+    }, [API_BASE_URL, endpoints.department_by_id, departmentId, token]);
 
-    const fetchAdmins = async () => {
+    const fetchAdmins = useCallback(async () => {
         try {
             setLoading(true);
             setError("");
@@ -82,7 +77,12 @@ const AdminManagement = ({ departmentId }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [API_BASE_URL, endpoints.adminsList, departmentId, token]);
+
+    useEffect(() => {
+        fetchAdmins();
+        fetchDepartment();
+    }, [fetchAdmins, fetchDepartment]);
 
     const handleAddAdmin = async () => {
         try {

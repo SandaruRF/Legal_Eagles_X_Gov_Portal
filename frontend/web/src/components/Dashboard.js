@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     MdDashboard,
     MdCalendarToday,
@@ -16,31 +16,19 @@ import Appointments from "./Appointments";
 import Analytics from "./Analytics";
 import Feedback from "./Feedback";
 import AdminManagement from "./AdminManagement";
-import departmentsData from "../data/departments.json";
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState("overview");
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [department, setDepartment] = useState("Unknown Department");
-    const [loading, setLoading] = useState(true);
 
     const { user, logout, token } = useAuth();
     const { API_BASE_URL, endpoints } = config;
 
     const currentUser = user;
 
-    // Get department name from departments data
-    useEffect(() => {
-        // Check if user is logged in on app load
-        if (token) {
-            fetchDepartment();
-        } else {
-            setLoading(false);
-        }
-    }, [token]);
-
-    const fetchDepartment = async () => {
+    const fetchDepartment = useCallback(async () => {
         try {
             const response = await fetch(
                 `${API_BASE_URL}${endpoints.department_by_id}${currentUser.department_id}`
@@ -53,10 +41,21 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Failed to fetch department:", error);
             logout();
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [
+        API_BASE_URL,
+        endpoints.department_by_id,
+        currentUser.department_id,
+        logout,
+    ]);
+
+    // Get department name from departments data
+    useEffect(() => {
+        // Check if user is logged in on app load
+        if (token) {
+            fetchDepartment();
+        }
+    }, [token, fetchDepartment]);
 
     const handleLogout = () => {
         setShowLogoutModal(true);
