@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     LineChart,
     Line,
@@ -13,111 +13,143 @@ import {
     Pie,
     Cell,
 } from "recharts";
-import { MdTrendingUp, MdWarning, MdRocket } from "react-icons/md";
-import appointmentsData from "../data/appointments.json";
-import analyticsData from "../data/analytics.json";
+import { MdTrendingUp, MdWarning, MdRocket, MdRefresh } from "react-icons/md";
+import { useAuth } from "../contexts/AuthContext";
+import config from "../config/api";
 
 const Analytics = ({ departmentId }) => {
-    // Filter data for current department
-    const departmentAppointments = appointmentsData.filter(
-        (apt) => apt.department_id === departmentId
-    );
-    const departmentAnalytics = analyticsData.filter(
-        (data) => data.department_id === departmentId
-    );
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [selectedService, setSelectedService] = useState("all");
 
-    // Prepare hourly data for line chart
-    const hourlyData = departmentAnalytics.map((data) => ({
-        hour: data.hour,
-        appointments: data.appointments,
-    }));
+    const { token } = useAuth();
+    const { API_BASE_URL, endpoints } = config;
 
-    // Calculate peak hours
-    const peakHour =
-        departmentAnalytics.length > 0
-            ? departmentAnalytics.reduce((max, current) =>
-                  current.appointments > max.appointments ? current : max
-              )
-            : { hour: "9:00 AM", appointments: 0 };
+    useEffect(() => {
+        fetchAnalyticsData();
+    }, [departmentId]);
 
-    // Prepare status distribution data
-    const statusData = [
-        {
-            name: "Completed",
-            value: departmentAppointments.filter(
-                (apt) => apt.status === "Completed"
-            ).length,
-            color: "#28a745",
-        },
-        {
-            name: "Confirmed",
-            value: departmentAppointments.filter(
-                (apt) => apt.status === "Confirmed"
-            ).length,
-            color: "#FEB600",
-        },
-        {
-            name: "Booked",
-            value: departmentAppointments.filter(
-                (apt) => apt.status === "Booked"
-            ).length,
-            color: "#1976d2",
-        },
-        {
-            name: "No Show",
-            value: departmentAppointments.filter(
-                (apt) => apt.status === "NoShow"
-            ).length,
-            color: "#8C1F28",
-        },
-        {
-            name: "Cancelled",
-            value: departmentAppointments.filter(
-                (apt) => apt.status === "Cancelled"
-            ).length,
-            color: "#d32f2f",
-        },
-    ].filter((item) => item.value > 0);
+    const fetchAnalyticsData = async () => {
+        try {
+            setLoading(true);
+            setError("");
 
-    // Calculate metrics
-    const totalAppointments = departmentAppointments.length;
-    const avgProcessingTime = "45 min"; // Mock data
-    const totalWorkload =
-        departmentAnalytics.length > 0
-            ? departmentAnalytics.reduce(
-                  (sum, data) => sum + data.appointments,
-                  0
-              )
-            : 0;
-    const noShowRate =
-        totalAppointments > 0
-            ? (
-                  (departmentAppointments.filter(
-                      (apt) => apt.status === "NoShow"
-                  ).length /
-                      totalAppointments) *
-                  100
-              ).toFixed(1)
-            : 0;
+            const response = await fetch(
+                `${API_BASE_URL}/api/admin/analytics`,
+                {
+                    headers: config.getAuthHeaders(token),
+                }
+            );
 
-    // Service popularity data
-    const serviceStats = {};
-    departmentAppointments.forEach((apt) => {
-        serviceStats[apt.service_name] =
-            (serviceStats[apt.service_name] || 0) + 1;
-    });
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch analytics: ${response.status}`
+                );
+            }
 
-    const serviceData = Object.entries(serviceStats)
-        .map(([name, count]) => ({ name, appointments: count }))
-        .sort((a, b) => b.appointments - a.appointments)
-        .slice(0, 5);
+            const data = await response.json();
+            setAnalyticsData(data);
+        } catch (error) {
+            console.error("Error fetching analytics:", error);
+            setError(error.message || "Failed to fetch analytics data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="content-header">
+                <h2>Department Analytics</h2>
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        minHeight: "300px",
+                        flexDirection: "column",
+                        gap: "1rem",
+                    }}
+                >
+                    <MdRefresh
+                        style={{
+                            fontSize: "3rem",
+                            color: "#4E6E63",
+                            animation: "spin 1s linear infinite",
+                        }}
+                    />
+                    <p style={{ color: "#6c757d", fontSize: "1.1rem" }}>
+                        Loading analytics data...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="content-header">
+                <h2>Department Analytics</h2>
+                <div className="error-container">
+                    <p className="error-message">
+                        Error loading analytics: {error}
+                    </p>
+                    <button
+                        onClick={fetchAnalyticsData}
+                        className="retry-button"
+                        style={{
+                            padding: "0.5rem 1rem",
+                            backgroundColor: "#4E6E63",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            marginTop: "1rem",
+                        }}
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!analyticsData) return null;
+
+    const {
+        overall_hourly_distribution,
+        services_hourly_distribution,
+        popular_services,
+        status_distribution,
+        peak_hour,
+        available_services,
+        metrics,
+        department_name,
+    } = analyticsData;
+
+    // Get current hourly data based on service selection
+    const getCurrentHourlyData = () => {
+        if (selectedService === "all") {
+            return overall_hourly_distribution;
+        }
+
+        const serviceData = services_hourly_distribution.find(
+            (service) => service.service_id === selectedService
+        );
+        return serviceData ? serviceData.hourly_data : [];
+    };
+
+    const currentHourlyData = getCurrentHourlyData();
 
     return (
         <div>
             <div className="content-header">
                 <h2>Department Analytics</h2>
                 <p className="content-subtitle">
-                    Data insights to optimize your department's operations
+                    Data insights to optimize {department_name}'s operations
                 </p>
             </div>
 
@@ -126,17 +158,17 @@ const Analytics = ({ departmentId }) => {
                 <div className="stat-card">
                     <h3>Peak Booking Hour</h3>
                     <div className="stat-value" style={{ color: "#8C1F28" }}>
-                        {peakHour.hour}
+                        {peak_hour.hour}
                     </div>
                     <p className="stat-description">
-                        {peakHour.appointments} appointments
+                        {peak_hour.appointments} appointments
                     </p>
                 </div>
 
                 <div className="stat-card">
                     <h3>Total Daily Load</h3>
                     <div className="stat-value" style={{ color: "#FEB600" }}>
-                        {totalWorkload}
+                        {metrics.total_workload}
                     </div>
                     <p className="stat-description">Appointments scheduled</p>
                 </div>
@@ -144,7 +176,7 @@ const Analytics = ({ departmentId }) => {
                 <div className="stat-card">
                     <h3>No-Show Rate</h3>
                     <div className="stat-value" style={{ color: "#8C1F28" }}>
-                        {noShowRate}%
+                        {metrics.no_show_rate}%
                     </div>
                     <p className="stat-description">Optimization opportunity</p>
                 </div>
@@ -152,7 +184,7 @@ const Analytics = ({ departmentId }) => {
                 <div className="stat-card">
                     <h3>Avg Processing Time</h3>
                     <div className="stat-value" style={{ color: "#28a745" }}>
-                        {avgProcessingTime}
+                        {metrics.avg_processing_time}
                     </div>
                     <p className="stat-description">Per appointment</p>
                 </div>
@@ -160,11 +192,42 @@ const Analytics = ({ departmentId }) => {
 
             {/* Charts Grid */}
             <div className="charts-section">
-                {/* Hourly Distribution */}
+                {/* Hourly Distribution with Service Filter */}
                 <div className="chart-card">
-                    <h3>Hourly Appointment Distribution</h3>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "1rem",
+                        }}
+                    >
+                        <h3>Hourly Appointment Distribution</h3>
+                        <select
+                            value={selectedService}
+                            onChange={(e) => setSelectedService(e.target.value)}
+                            style={{
+                                padding: "0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid #ddd",
+                                backgroundColor: "white",
+                                cursor: "pointer",
+                                minWidth: "150px",
+                            }}
+                        >
+                            <option value="all">All Services</option>
+                            {available_services.map((service) => (
+                                <option
+                                    key={service.service_id}
+                                    value={service.service_id}
+                                >
+                                    {service.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={hourlyData}>
+                        <LineChart data={currentHourlyData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="hour" />
                             <YAxis />
@@ -194,7 +257,7 @@ const Analytics = ({ departmentId }) => {
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie
-                                data={statusData}
+                                data={status_distribution}
                                 cx="50%"
                                 cy="50%"
                                 outerRadius={80}
@@ -203,7 +266,7 @@ const Analytics = ({ departmentId }) => {
                                     `${name}: ${(percent * 100).toFixed(0)}%`
                                 }
                             >
-                                {statusData.map((entry, index) => (
+                                {status_distribution.map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
                                         fill={entry.color}
@@ -222,10 +285,10 @@ const Analytics = ({ departmentId }) => {
                 <div className="chart-card">
                     <h3>Most Popular Services</h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={serviceData} layout="horizontal">
+                        <BarChart data={popular_services}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={80} />
+                            <XAxis dataKey="name" />
+                            <YAxis />
                             <Tooltip />
                             <Bar dataKey="appointments" fill="#8C1F28" />
                         </BarChart>
@@ -254,8 +317,8 @@ const Analytics = ({ departmentId }) => {
                                     marginBottom: "0.5rem",
                                 }}
                             >
-                                Highest demand at {peakHour.hour} with{" "}
-                                {peakHour.appointments} appointments
+                                Highest demand at {peak_hour.hour} with{" "}
+                                {peak_hour.appointments} appointments
                             </p>
                             <p style={{ color: "#666", fontSize: "0.9rem" }}>
                                 Consider allocating more staff during this
@@ -273,7 +336,7 @@ const Analytics = ({ departmentId }) => {
                                     gap: "0.5rem",
                                 }}
                             >
-                                <MdWarning /> No-Show Analysis
+                                <MdWarning /> No-Show Rate Analysis
                             </h4>
                             <p
                                 style={{
@@ -281,12 +344,11 @@ const Analytics = ({ departmentId }) => {
                                     marginBottom: "0.5rem",
                                 }}
                             >
-                                {noShowRate}% no-show rate detected
+                                {metrics.no_show_rate}% no-show rate detected
                             </p>
                             <p style={{ color: "#666", fontSize: "0.9rem" }}>
-                                {parseFloat(noShowRate) > 10
-                                    ? "Consider implementing reminder systems"
-                                    : "No-show rate is within acceptable range"}
+                                Calculated as: (No-Show appointments ÷ Total
+                                appointments) × 100
                             </p>
                         </div>
 
@@ -300,22 +362,21 @@ const Analytics = ({ departmentId }) => {
                                     gap: "0.5rem",
                                 }}
                             >
-                                <MdRocket /> Efficiency Tips
+                                <MdRocket /> Processing Time Metrics
                             </h4>
-                            <ul
+                            <p
                                 style={{
                                     color: "#666",
-                                    fontSize: "0.9rem",
-                                    paddingLeft: "1.5rem",
+                                    marginBottom: "0.5rem",
                                 }}
                             >
-                                <li>Schedule buffer time during peak hours</li>
-                                <li>Implement digital document verification</li>
-                                <li>
-                                    Consider extending hours for popular
-                                    services
-                                </li>
-                            </ul>
+                                Average processing time:{" "}
+                                {metrics.avg_processing_time}
+                            </p>
+                            <p style={{ color: "#666", fontSize: "0.9rem" }}>
+                                Based on historical data analysis of completed
+                                appointments and service duration patterns
+                            </p>
                         </div>
                     </div>
                 </div>

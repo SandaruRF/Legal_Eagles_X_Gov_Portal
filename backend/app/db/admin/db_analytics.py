@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 
 
 async def get_overall_hourly_distribution(db: Prisma, department_id: str) -> List[Dict[str, Any]]:
-    """Get hourly appointment distribution for all appointments in department"""
+    """Get hourly appointment distribution for all appointments in department (8 AM to 5 PM)"""
     
     # Get all appointments for the department
     appointments = await db.appointment.find_many(
@@ -18,27 +18,28 @@ async def get_overall_hourly_distribution(db: Prisma, department_id: str) -> Lis
         }
     )
     
-    # Group by hour (0-23)
+    # Group by business hours only (8 AM to 5 PM = hours 8-17)
     hourly_counts = {}
-    for hour in range(24):
+    for hour in range(8, 18):  # 8 AM to 5 PM (17:00)
         hourly_counts[f"{hour:02d}:00"] = 0
     
     for appointment in appointments:
-        hour_key = f"{appointment.appointment_datetime.hour:02d}:00"
-        hourly_counts[hour_key] += 1
+        hour = appointment.appointment_datetime.hour
+        if 8 <= hour <= 17:  # Only count business hours
+            hour_key = f"{hour:02d}:00"
+            hourly_counts[hour_key] += 1
     
-    # Convert to list format, only include hours with appointments
+    # Convert to list format, include all business hours (even 0 counts for consistent charting)
     hourly_data = [
         {"hour": hour, "appointments": count}
-        for hour, count in hourly_counts.items()
-        if count > 0
+        for hour, count in sorted(hourly_counts.items())
     ]
     
-    return sorted(hourly_data, key=lambda x: x["hour"])
+    return hourly_data
 
 
 async def get_all_services_hourly_distribution(db: Prisma, department_id: str) -> List[Dict[str, Any]]:
-    """Get hourly appointment distribution for each service in the department"""
+    """Get hourly appointment distribution for each service in the department (8 AM to 5 PM)"""
     
     # Get all services in the department
     services = await db.service.find_many(
@@ -57,16 +58,18 @@ async def get_all_services_hourly_distribution(db: Prisma, department_id: str) -
             }
         )
         
-        # Group by hour (0-23)
+        # Group by business hours only (8 AM to 5 PM = hours 8-17)
         hourly_counts = {}
-        for hour in range(24):
+        for hour in range(8, 18):  # 8 AM to 5 PM (17:00)
             hourly_counts[f"{hour:02d}:00"] = 0
         
         for appointment in appointments:
-            hour_key = f"{appointment.appointment_datetime.hour:02d}:00"
-            hourly_counts[hour_key] += 1
+            hour = appointment.appointment_datetime.hour
+            if 8 <= hour <= 17:  # Only count business hours
+                hour_key = f"{hour:02d}:00"
+                hourly_counts[hour_key] += 1
         
-        # Convert to list format, include all hours (even 0 counts for consistent charting)
+        # Convert to list format, include all business hours (even 0 counts for consistent charting)
         hourly_data = [
             {"hour": hour, "appointments": count}
             for hour, count in sorted(hourly_counts.items())
