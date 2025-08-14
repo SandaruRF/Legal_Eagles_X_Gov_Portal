@@ -9,6 +9,7 @@ from .routes.citizen import citizen_kyc_route
 from .routes.admin import admin_route
 from .routes.admin import department_route
 from .routes.admin import appointment_route
+from .routes.admin import feedback_route
 
 
 @asynccontextmanager
@@ -45,9 +46,8 @@ app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
 app.include_router(citizen_kyc_route.router, prefix="/api")
 app.include_router(department_route.router, prefix="/api")
-app.include_router(
-    appointment_route.router, prefix="/api/appointments", tags=["Appointments"]
-)
+app.include_router(appointment_route.router, prefix="/api/appointments", tags=["Appointments"])
+app.include_router(feedback_route.router, prefix="/api/admin", tags=["Feedback"])
 
 
 # A simple root endpoint for health checks
