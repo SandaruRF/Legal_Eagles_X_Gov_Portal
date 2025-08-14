@@ -6,6 +6,7 @@ import datetime
 
 class AdminBase(BaseModel):
     """Base schema with common admin fields."""
+
     full_name: str
     email: EmailStr
     role: AdminRole = AdminRole.Officer
@@ -14,6 +15,7 @@ class AdminBase(BaseModel):
 
 class AdminCreate(AdminBase):
     """Schema for creating a new admin."""
+
     password: str
 
 
@@ -24,6 +26,7 @@ class AdminUpdate(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[AdminRole] = None
     password: Optional[str] = None
+    department_id: Optional[str] = None
 
 
 class Admin(AdminBase):

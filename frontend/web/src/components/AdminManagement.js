@@ -10,6 +10,7 @@ import {
     MdBusiness,
 } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
+import config from "../config/api";
 import departmentsData from "../data/departments.json";
 
 const AdminManagement = ({ departmentId }) => {
@@ -19,6 +20,9 @@ const AdminManagement = ({ departmentId }) => {
     const [success, setSuccess] = useState("");
     const [editingAdmin, setEditingAdmin] = useState(null);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [adminToDelete, setAdminToDelete] = useState(null);
+    const [department, setDepartment] = useState(null);
     const [newAdmin, setNewAdmin] = useState({
         full_name: "",
         email: "",
@@ -28,31 +32,54 @@ const AdminManagement = ({ departmentId }) => {
     });
 
     const { user, token } = useAuth();
+    const { API_BASE_URL, endpoints } = config;
 
     useEffect(() => {
         fetchAdmins();
+        fetchDepartment();
     }, [departmentId]);
+
+    const fetchDepartment = async () => {
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}${endpoints.department_by_id}${departmentId}`,
+                {
+                    headers: config.getAuthHeaders(token),
+                }
+            );
+
+            if (response.ok) {
+                const departmentData = await response.json();
+                setDepartment(departmentData);
+            }
+        } catch (error) {
+            console.error("Error fetching department:", error);
+        }
+    };
 
     const fetchAdmins = async () => {
         try {
             setLoading(true);
+            setError("");
+
             // Fetch admins by department from backend API
-            const response = await fetch(`/api/admins?department_id=${departmentId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error("Failed to fetch admins");
+            const response = await fetch(
+                `${API_BASE_URL}${endpoints.adminsList}?department_id=${departmentId}`,
+                {
+                    headers: config.getAuthHeaders(token),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch admins: ${response.status}`);
+            }
+
             const data = await response.json();
             setAdmins(data);
-            setLoading(false);
-            setTimeout(() => {
-                const departmentAdmins = mockAdmins.filter(
-                    (admin) => admin.department_id === departmentId
-                );
-                setAdmins(departmentAdmins);
-                setLoading(false);
-            }, 500);
         } catch (error) {
-            setError("Failed to fetch admins");
+            console.error("Error fetching admins:", error);
+            setError("Failed to fetch admins. Please try again.");
+        } finally {
             setLoading(false);
         }
     };
@@ -68,23 +95,32 @@ const AdminManagement = ({ departmentId }) => {
                 return;
             }
 
-            // TODO: Replace with actual API call to your existing register endpoint
-            // const response = await fetch('/api/admins/register', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${token}`
-            //     },
-            //     body: JSON.stringify(newAdmin)
-            // });
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(newAdmin.email)) {
+                setError("Please enter a valid email address");
+                return;
+            }
 
-            // Mock implementation
-            const newAdminWithId = {
-                ...newAdmin,
-                admin_id: `admin_${Date.now()}`,
-            };
+            // API call to register new admin
+            const response = await fetch(
+                `${API_BASE_URL}${endpoints.adminCreate}`,
+                {
+                    method: "POST",
+                    headers: config.getAuthHeaders(token),
+                    body: JSON.stringify(newAdmin),
+                }
+            );
 
-            setAdmins([...admins, newAdminWithId]);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Failed to add admin");
+            }
+
+            const newAdminData = await response.json();
+
+            // Update local state
+            setAdmins([...admins, newAdminData]);
             setNewAdmin({
                 full_name: "",
                 email: "",
@@ -95,7 +131,8 @@ const AdminManagement = ({ departmentId }) => {
             setShowAddForm(false);
             setSuccess("Admin added successfully");
         } catch (error) {
-            setError("Failed to add admin");
+            console.error("Error adding admin:", error);
+            setError(error.message || "Failed to add admin");
         }
     };
 
@@ -104,57 +141,96 @@ const AdminManagement = ({ departmentId }) => {
             setError("");
             setSuccess("");
 
-            // TODO: Replace with actual API call
-            // const response = await fetch(`/api/admins/${adminId}`, {
-            //     method: 'PUT',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${token}`
-            //     },
-            //     body: JSON.stringify(updatedData)
-            // });
+            // Validation
+            if (!updatedData.full_name || !updatedData.email) {
+                setError("Name and email are required");
+                return;
+            }
 
-            // Mock implementation
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(updatedData.email)) {
+                setError("Please enter a valid email address");
+                return;
+            }
+
+            // API call to update admin
+            const response = await fetch(
+                `${API_BASE_URL}${endpoints.adminUpdate}/${adminId}`,
+                {
+                    method: "PUT",
+                    headers: config.getAuthHeaders(token),
+                    body: JSON.stringify(updatedData),
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Failed to update admin");
+            }
+
+            const updatedAdmin = await response.json();
+
+            // Update local state
             setAdmins(
                 admins.map((admin) =>
-                    admin.admin_id === adminId
-                        ? { ...admin, ...updatedData }
-                        : admin
+                    admin.admin_id === adminId ? updatedAdmin : admin
                 )
             );
             setEditingAdmin(null);
             setSuccess("Admin updated successfully");
         } catch (error) {
-            setError("Failed to update admin");
+            console.error("Error updating admin:", error);
+            setError(error.message || "Failed to update admin");
         }
     };
 
     const handleDeleteAdmin = async (adminId) => {
-        if (!window.confirm("Are you sure you want to delete this admin?")) {
-            return;
-        }
-
         try {
             setError("");
             setSuccess("");
 
-            // TODO: Replace with actual API call
-            // const response = await fetch(`/api/admins/${adminId}`, {
-            //     method: 'DELETE',
-            //     headers: { 'Authorization': `Bearer ${token}` }
-            // });
+            // API call to delete admin
+            const response = await fetch(
+                `${API_BASE_URL}${endpoints.adminDelete}/${adminId}`,
+                {
+                    method: "DELETE",
+                    headers: config.getAuthHeaders(token),
+                }
+            );
 
-            // Mock implementation
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Failed to delete admin");
+            }
+
+            // Update local state
             setAdmins(admins.filter((admin) => admin.admin_id !== adminId));
             setSuccess("Admin deleted successfully");
+            setShowDeleteModal(false);
+            setAdminToDelete(null);
         } catch (error) {
-            setError("Failed to delete admin");
+            console.error("Error deleting admin:", error);
+            setError(error.message || "Failed to delete admin");
+            setShowDeleteModal(false);
+            setAdminToDelete(null);
         }
     };
 
+    const confirmDelete = (admin) => {
+        setError("");
+        setSuccess("");
+        setAdminToDelete(admin);
+        setShowDeleteModal(true);
+    };
+
     const getDepartmentName = (deptId) => {
+        if (department && department.department_id === deptId) {
+            return department.name;
+        }
+        // Fallback to JSON data if API data not available yet
         const dept = departmentsData.find((d) => d.department_id === deptId);
-        return dept ? dept.name : "Unknown Department";
+        return dept ? dept.name : "Loading...";
     };
 
     if (user?.role !== "Head") {
@@ -179,7 +255,11 @@ const AdminManagement = ({ departmentId }) => {
                 <h2 style={{ color: "#4E6E63" }}>Admin Management</h2>
                 <button
                     className="btn btn-primary"
-                    onClick={() => setShowAddForm(true)}
+                    onClick={() => {
+                        setError("");
+                        setSuccess("");
+                        setShowAddForm(true);
+                    }}
                     style={{
                         display: "flex",
                         alignItems: "center",
@@ -415,9 +495,7 @@ const AdminManagement = ({ departmentId }) => {
                                             updatedData
                                         )
                                     }
-                                    onDelete={() =>
-                                        handleDeleteAdmin(admin.admin_id)
-                                    }
+                                    onDelete={() => confirmDelete(admin)}
                                     onStartEdit={() =>
                                         setEditingAdmin(admin.admin_id)
                                     }
@@ -429,6 +507,93 @@ const AdminManagement = ({ departmentId }) => {
                     </table>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="modal-overlay">
+                    <div className="modal admin-modal">
+                        <div className="modal-header">
+                            <h3>Confirm Deletion</h3>
+                            <button
+                                className="modal-close-btn"
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setAdminToDelete(null);
+                                }}
+                            >
+                                <MdCancel />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                    padding: "1rem 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: "3rem",
+                                        color: "#dc3545",
+                                        marginBottom: "1rem",
+                                    }}
+                                >
+                                    <MdDelete />
+                                </div>
+                                <p
+                                    style={{
+                                        fontSize: "1.1rem",
+                                        color: "#495057",
+                                        marginBottom: "0.5rem",
+                                    }}
+                                >
+                                    Are you sure you want to delete admin
+                                </p>
+                                <p
+                                    style={{
+                                        fontSize: "1.2rem",
+                                        fontWeight: "bold",
+                                        color: "#8C1F28",
+                                        marginBottom: "1rem",
+                                    }}
+                                >
+                                    "{adminToDelete?.full_name}"?
+                                </p>
+                                <p
+                                    style={{
+                                        fontSize: "0.9rem",
+                                        color: "#6c757d",
+                                        fontStyle: "italic",
+                                    }}
+                                >
+                                    This action cannot be undone.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setAdminToDelete(null);
+                                }}
+                            >
+                                <MdCancel style={{ marginRight: "0.5rem" }} />
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={() =>
+                                    handleDeleteAdmin(adminToDelete.admin_id)
+                                }
+                            >
+                                <MdDelete style={{ marginRight: "0.5rem" }} />
+                                Delete Admin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -13,11 +13,18 @@ from app.core.config import settings
 
 
 async def register_admin_service(
-    db: Prisma, admin_in: admin_schema.AdminCreate
+    db: Prisma, admin_in: admin_schema.AdminCreate, current_admin: admin_schema.Admin
 ) -> admin_schema.Admin:
     """
-    Register a new admin in the system.
+    Register a new admin in the system (Head role only).
     """
+    # Check if current admin has Head role
+    if current_admin.role != "Head":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Head role can register new admins",
+        )
+
     try:
         new_admin = await db_admin.create_admin(db, admin_in)
         return new_admin

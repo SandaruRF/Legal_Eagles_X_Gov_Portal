@@ -14,12 +14,14 @@ router = APIRouter(prefix="/admins", tags=["Admins"])
 
 @router.post("/register", response_model=admin_schema.Admin)
 async def register_admin(
-    admin_in: admin_schema.AdminCreate, db: Prisma = Depends(get_db)
+    admin_in: admin_schema.AdminCreate,
+    current_admin: admin_schema.Admin = Depends(auth.get_current_admin),
+    db: Prisma = Depends(get_db),
 ):
     """
-    Register a new admin in the system.
+    Register a new admin in the system (Head role only).
     """
-    return await admin_service.register_admin_service(db, admin_in)
+    return await admin_service.register_admin_service(db, admin_in, current_admin)
 
 
 @router.post("/login", response_model=token_schema.Token)

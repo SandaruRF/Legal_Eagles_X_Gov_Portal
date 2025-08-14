@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     MdDashboard,
     MdCalendarToday,
@@ -25,8 +25,8 @@ const Dashboard = () => {
     const [department, setDepartment] = useState("Unknown Department");
     const [loading, setLoading] = useState(true);
 
-    const { user, logout } = useAuth();
-    const { API_BASE_URL, endpoints } = config();
+    const { user, logout, token } = useAuth();
+    const { API_BASE_URL, endpoints } = config;
 
     const currentUser = user;
 
@@ -52,8 +52,7 @@ const Dashboard = () => {
             }
         } catch (error) {
             console.error("Failed to fetch department:", error);
-            setToken(null);
-            setUser(null);
+            logout();
         } finally {
             setLoading(false);
         }
@@ -113,7 +112,9 @@ const Dashboard = () => {
             <div className={`sidebar ${isMobileMenuOpen ? "mobile-open" : ""}`}>
                 <div className="sidebar-header">
                     <h1>Gov Portal</h1>
-                    <div className="department-name">{departmentName}</div>
+                    <div className="department-name">
+                        {department.name || department}
+                    </div>
                     <div
                         style={{
                             fontSize: "0.8rem",
