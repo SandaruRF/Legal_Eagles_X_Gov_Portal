@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from .core.database import connect_db, disconnect_db
+from .core.database import connect_db, disconnect_db, get_db
+from .core.notification_manager import notification_manager
 
 from .routes.citizen import citizen_route
 from .routes.citizen import citizen_kyc_route
 
 from .routes.admin import admin_route
-
+from .routes.citizen import notification_route, websocket
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,7 +16,15 @@ async def lifespan(app: FastAPI):
     """
     # Code to be executed before the application starts
     await connect_db()
+    
+    # Get the database connection
+    db = get_db()
+    
+    # Start notification background task with database connection
+    await notification_manager.start_periodic_check(db)
+    
     yield
+    
     # Code to be executed after the application stops
     await disconnect_db()
 
@@ -31,6 +40,8 @@ app = FastAPI(
 app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
 app.include_router(citizen_kyc_route.router, prefix="/api")
+app.include_router(notification_route.router, prefix="/api")
+app.include_router(websocket.router, prefix="/api")
 
 # A simple root endpoint for health checks
 @app.get("/", tags=["Health Check"])
