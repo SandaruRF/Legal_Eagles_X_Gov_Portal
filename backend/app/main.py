@@ -11,6 +11,7 @@ from .routes.admin import department_route
 from .routes.admin import appointment_route
 from .routes.admin import feedback_route
 from .routes.admin import dashboard_route
+from .routes.admin import analytics_route
 
 
 @asynccontextmanager
@@ -54,6 +55,7 @@ app.include_router(feedback_route.router, prefix="/api/admin", tags=["Feedback"]
 app.include_router(
     dashboard_route.router, prefix="/api/admin/dashboard", tags=["Dashboard"]
 )
+app.include_router(analytics_route.router, prefix="/api/admin", tags=["Analytics"])
 
 
 # A simple root endpoint for health checks
