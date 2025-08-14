@@ -102,3 +102,23 @@ async def delete_appointment_endpoint(
         return JSONResponse(content={"status": "success", "message": "Appointment permanently deleted."})
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/{appointment_id}/status")
+async def update_appointment_status_admin(
+    appointment_id: str,
+    status: str,
+    current_admin: admin_schema.Admin = Depends(auth.get_current_admin)
+):
+    try:
+        if status not in ["Confirmed", "Completed"]:
+            raise HTTPException(status_code=400, detail="Invalid status. Must be 'Confirmed' or 'Completed'.")
+        appointment = await db.appointment.find_unique(where={"appointment_id": appointment_id})
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        await db.appointment.update(
+            where={"appointment_id": appointment_id},
+            data={"status": status}
+        )
+        return JSONResponse(content={"status": "success", "message": f"Appointment status updated to {status}."})
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
