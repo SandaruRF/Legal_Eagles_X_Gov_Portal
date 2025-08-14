@@ -6,8 +6,10 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Any
 import hashlib
+
 from app.core.config import get_settings
 from app.utils.embeddings import SentenceTransformerEmbeddings
+from app.services.knowledge_base import KnowledgeBaseService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -124,15 +126,17 @@ class ChromaDataLoader:
             logger.error(f"Error loading data into ChromaDB: {str(e)}")
             raise
     
-    def _process_content(self, content: Dict[str, Any], parent_url: str = ""):
-        """Process content and its nested content recursively"""
+    async def _process_content(self, content: Dict[str, Any], parent_url: str = ""):
+        """Process content and batch add to ChromaDB"""
         chunks = self._prepare_text_chunk(content, parent_url)
         
-        # Add chunks to ChromaDB
+        # Prepare batch data
+        documents = []
+        metadatas = []
+        ids = []
+        
         for chunk in chunks:
             doc_id = self._generate_document_id(chunk['text'], chunk['url'])
-            
-            # Create metadata
             metadata = {
                 'url': chunk['url'],
                 'type': chunk['type'],
@@ -141,17 +145,14 @@ class ChromaDataLoader:
                 'timestamp': datetime.utcnow().isoformat()
             }
             
-            # Add to ChromaDB
-            self.collection.upsert(
-                ids=[doc_id],
-                documents=[chunk['text']],
-                metadatas=[metadata]
-            )
+            documents.append(chunk['text'])
+            metadatas.append(metadata)
+            ids.append(doc_id)
         
-        # Process nested content from links
-        for link in content.get('links', []):
-            if 'content' in link and isinstance(link['content'], dict):
-                self._process_content(link['content'], content['url'])
+        # USE add_documents() for bulk insertion
+        if documents: 
+            kb_service = KnowledgeBaseService()
+            await kb_service.add_documents(documents, metadatas, ids)
     
     def query_similar_content(self, query_text: str, n_results: int = 5) -> List[Dict]:
         """Query ChromaDB for similar content"""

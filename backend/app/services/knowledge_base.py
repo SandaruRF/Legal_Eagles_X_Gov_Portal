@@ -1,9 +1,12 @@
 import chromadb
 import datetime
 import hashlib
-from chromadb.config import Settings
+import logging
+
 from app.core.config import get_settings
 from app.utils.embeddings import SentenceTransformerEmbeddings
+
+logger = logging.getLogger(__name__)
 
 class KnowledgeBaseService:
     def __init__(self):
@@ -32,11 +35,27 @@ class KnowledgeBaseService:
     
     async def search(self, query: str, limit: int = 5):
         """Search government services using natural language"""
-        results = self.collection.query(
-            query_texts=[query],
-            n_results=limit
-        )
-        return results
+        try:
+            if not query or not query.strip():
+                raise ValueError("Query cannot be empty")
+                
+            if limit <= 0:
+                limit = 5
+                
+            results = self.collection.query(
+                query_texts=[query],
+                n_results=limit
+            )
+            
+            if not results:
+                logger.warning(f"No results found for query: {query}")
+                return {'documents': [[]], 'metadatas': [[]], 'distances': [[]]}
+                
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in ChromaDB search for query '{query}': {str(e)}")
+            return {'documents': [[]], 'metadatas': [[]], 'distances': [[]]}
     
     async def add_documents(self, documents, metadatas, ids):
         """Add new documents to knowledge base"""
@@ -48,22 +67,32 @@ class KnowledgeBaseService:
     
     async def store_webpage_content(self, url: str, content: str, timestamp: datetime):
         """Store scraped webpage content in the vector database"""
-        # Generate a unique ID for the document
-        doc_id = f"webpage_{hashlib.sha256(url.encode()).hexdigest()}"
-        
-        # Create metadata for the document
-        metadata = {
-            "url": url,
-            "source_type": "government_website",
-            "last_updated": timestamp.isoformat(),
-            "content_type": "webpage"
-        }
-        
-        # Add or update the document in ChromaDB
-        self.collection.upsert(
-            documents=[content],
-            metadatas=[metadata],
-            ids=[doc_id]
-        )
-        
-        return doc_id
+        try:
+            if not url or not content:
+                raise ValueError("URL and content cannot be empty")
+                
+            # Generate a unique ID for the document
+            doc_id = f"webpage_{hashlib.sha256(url.encode()).hexdigest()}"
+            
+            # Create metadata for the document
+            metadata = {
+                "url": url,
+                "source_type": "government_website",
+                "last_updated": timestamp.isoformat(),
+                "content_type": "webpage",
+                "content_length": len(content)
+            }
+            
+            # Add or update the document in ChromaDB
+            self.collection.upsert(
+                documents=[content],
+                metadatas=[metadata],
+                ids=[doc_id]
+            )
+            
+            logger.info(f"Successfully stored webpage content: {url}")
+            return doc_id
+            
+        except Exception as e:
+            logger.error(f"Error storing webpage content for {url}: {str(e)}")
+            raise

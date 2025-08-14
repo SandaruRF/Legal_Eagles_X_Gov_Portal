@@ -212,8 +212,42 @@ class GovernmentWebMonitor:
             elif isinstance(result, Exception):
                 logger.error(f"Error in concurrent URL check: {str(result)}")
         
+        # Use DocumentProcessor batch processing instead of direct ChromaDB updates
+        if changes:
+            try:
+                # Import DocumentProcessor here to avoid circular imports
+                from app.services.document_processor import DocumentProcessor
+                
+                processor = DocumentProcessor()
+                await processor.process_multiple_changes(changes)  # Batch processing
+                logger.info(f"Batch processed {len(changes)} changes through DocumentProcessor")
+                
+            except Exception as e:
+                logger.error(f"Failed batch processing, falling back to individual processing: {str(e)}")
+                
+                # Fallback to individual processing
+                try:
+                    from app.services.document_processor import DocumentProcessor
+                    processor = DocumentProcessor()
+                    
+                    successful_individual = 0
+                    for change in changes:
+                        try:
+                            await processor.process_content_change(change)
+                            successful_individual += 1
+                        except Exception as individual_error:
+                            logger.error(f"Failed to process individual change {change.url}: {str(individual_error)}")
+                    
+                    logger.info(f"Individual fallback completed: {successful_individual}/{len(changes)} changes processed")
+                    
+                except Exception as fallback_error:
+                    logger.error(f"Both batch and individual processing failed: {str(fallback_error)}")
+        else:
+            logger.info("No changes detected during monitoring")
+        
         logger.info(f"Monitoring completed. Found {len(changes)} changes.")
         return changes
+
     
     async def discover_additional_pages(self, base_url: str) -> List[str]:
         """Discover additional relevant pages from government site"""
