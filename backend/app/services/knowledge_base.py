@@ -1,7 +1,9 @@
 import chromadb
 import datetime
+import hashlib
 from chromadb.config import Settings
 from app.core.config import get_settings
+from app.utils.embeddings import SentenceTransformerEmbeddings
 
 class KnowledgeBaseService:
     def __init__(self):

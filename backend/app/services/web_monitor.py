@@ -156,6 +156,18 @@ class GovernmentWebMonitor:
                 await self.repo.update_url_hash(url, current_hash, current_content)
                 logger.info(f"Content changed for URL: {url}")
                 
+                try:
+                    await self.kb_service.store_webpage_content(
+                        url=url,
+                        content=current_content,
+                        timestamp=datetime.utcnow()
+                    )
+                    logger.info(f"Updated knowledge base for changed content: {url}")
+                except Exception as e:
+                    logger.warning(f"Failed to update knowledge base for {url}: {str(e)}")
+                
+                logger.info(f"Content changed for URL: {url}")
+                
                 return ContentChange(
                     url=url,
                     old_hash=stored_hash,
