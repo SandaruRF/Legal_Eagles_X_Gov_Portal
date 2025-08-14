@@ -604,6 +604,17 @@ body {
   background-color: #e6a500;
 }
 
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary-red);
+  border: 1px solid var(--primary-red);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary-red);
+  color: var(--white);
+}
+
 /* Loading and Empty States */
 .loading {
   text-align: center;
@@ -786,4 +797,123 @@ body {
 
 .btn-reject:hover {
   background-color: #6b1a21;
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Status Dropdown Styles */
+.status-dropdown {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  min-width: 120px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-dropdown:hover {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px rgba(78, 110, 99, 0.1);
+}
+
+.status-dropdown:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px rgba(78, 110, 99, 0.2);
+}
+
+/* Confirmation Popup Styles */
+.confirmation-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--white);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: var(--shadow-hover);
+  z-index: 1001;
+  min-width: 300px;
+  text-align: center;
+  border: 1px solid var(--border-light);
+}
+
+.confirmation-popup.success {
+  border-left: 4px solid var(--accent-green);
+}
+
+.confirmation-popup.error {
+  border-left: 4px solid var(--primary-red);
+}
+
+.confirmation-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+/* Enhanced Status Badge Styles */
+.status-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  display: inline-block;
+}
+
+.status-booked {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-confirmed {
+  background-color: #e8f5e8;
+  color: #388e3c;
+}
+
+.status-completed {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-cancelled {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.status-noshow {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+/* Button Outline Style for Filter */
+.btn-outline {
+  background: var(--white);
+  border: 2px solid var(--accent-green);
+  color: var(--accent-green);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+  background: var(--accent-green);
+  color: var(--white);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(78, 110, 99, 0.2);
 }
