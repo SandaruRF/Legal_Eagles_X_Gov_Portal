@@ -88,7 +88,7 @@ model KYC {
 model DigitalVaultDocument {
   document_id   String            @id @default(cuid())
   document_type VaultDocumentType
-  document_url  String
+  document_urls String[]
   uploaded_at   DateTime          @default(now())
   expiry_date   DateTime?
 
@@ -120,6 +120,7 @@ model Service {
   appointments   Appointment[]
   form_templates FormTemplate[]
   Location       Location[]
+  TimeSlot       TimeSlot[]
 }
 
 model Admin {
@@ -142,7 +143,6 @@ model Appointment {
   appointment_datetime DateTime
   status               AppointmentStatus @default(Booked)
   reference_number     String            @unique @default(cuid()) // Or a custom generator
-  qr_code_data         String            @unique @default(cuid()) // Or a custom generator
   created_at           DateTime          @default(now())
 
   citizen_id String
@@ -254,6 +254,11 @@ model TimeSlot {
   assigned_admin    Admin  @relation(fields: [assigned_admin_id], references: [admin_id])
 
   appointments Appointment[] // Appointments booked for this slot
+
+  appointment_ids String[]
+
+  service_id String
+  service    Service @relation(fields: [service_id], references: [service_id])
 }
 
 model Notification {
