@@ -10,6 +10,7 @@ async def submit_feedback(citizen_id: str, payload: FeedbackCreate):
         where={"appointment_id": payload.appointment_id}
     )
     if not appointment or appointment.citizen_id != citizen_id:
+
         raise HTTPException(status_code=403, detail="Invalid appointment")
 
     # Check duplicate
@@ -24,6 +25,6 @@ async def submit_feedback(citizen_id: str, payload: FeedbackCreate):
             "id": feedback.feedback_id,
             "submission_date": feedback.submitted_at,
             "status": "submitted",
-            "reference_number": feedback.reference_number
+            # "reference_number": feedback.reference_number
         }
     }

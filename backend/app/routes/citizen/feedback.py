@@ -1,5 +1,3 @@
-# app/routes/citizen/feedback.py
-
 from fastapi import APIRouter, Depends, HTTPException
 from prisma import Prisma
 
@@ -7,7 +5,7 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.schemas.citizen import citizen_schema
 from app.schemas.citizen.feedback import FeedbackCreate
-from app.db.citizen import feedback_repository  # function-based repository
+from app.db.citizen import feedback_repository
 
 router = APIRouter(
     prefix="/citizen/feedback",
@@ -29,15 +27,17 @@ async def submit_feedback(
     - Only one feedback submission allowed per appointment.
     """
 
-    # ✅ Validate that appointment exists & belongs to this citizen
+    # ✅ Validate appointment belongs to the current citizen
     appointment = await db.appointment.find_unique(
         where={"appointment_id": payload.appointment_id}
     )
     if not appointment or appointment.citizen_id != current_user.citizen_id:
         raise HTTPException(status_code=403, detail="Invalid appointment")
 
-    # ✅ Prevent duplicate feedback
-    existing = await feedback_repository.get_feedback_by_appointment_id(payload.appointment_id)
+    # ✅ Prevent duplicates
+    existing = await feedback_repository.get_feedback_by_appointment_id(
+        payload.appointment_id
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Feedback already submitted")
 
@@ -52,7 +52,6 @@ async def submit_feedback(
         "feedback": {
             "id": feedback.feedback_id,
             "submission_date": feedback.submitted_at,
-            "status": "submitted",
-            "reference_number": feedback.reference_number,
+            "status": "submitted"
         },
     }
