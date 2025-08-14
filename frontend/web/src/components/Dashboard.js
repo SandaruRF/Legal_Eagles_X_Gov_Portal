@@ -16,6 +16,7 @@ import Appointments from "./Appointments";
 import Analytics from "./Analytics";
 import Feedback from "./Feedback";
 import AdminManagement from "./AdminManagement";
+import govPortalLogo from "../images/gov-portal-logo.png";
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState("overview");
@@ -110,7 +111,33 @@ const Dashboard = () => {
             {/* Sidebar */}
             <div className={`sidebar ${isMobileMenuOpen ? "mobile-open" : ""}`}>
                 <div className="sidebar-header">
-                    <h1>Gov Portal</h1>
+                    <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+                        <img
+                            src={govPortalLogo}
+                            alt="Gov Portal Logo"
+                            style={{
+                                width: "90px",
+                                height: "60px",
+                                marginBottom: "0.5rem",
+                            }}
+                        />
+                    </div>
+                    <h1
+                        style={{ textAlign: "center", marginBottom: "0.25rem" }}
+                    >
+                        Gov Portal
+                    </h1>
+                    <div
+                        style={{
+                            textAlign: "center",
+                            fontSize: "0.9rem",
+                            marginBottom: "0.5rem",
+                            color: "#4E6E63",
+                            fontWeight: "500",
+                        }}
+                    >
+                        Admin Dashboard
+                    </div>
                     <div className="department-name">
                         {department.name || department}
                     </div>

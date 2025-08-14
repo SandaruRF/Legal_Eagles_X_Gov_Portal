@@ -88,7 +88,7 @@ model KYC {
 model DigitalVaultDocument {
   document_id   String            @id @default(cuid())
   document_type VaultDocumentType
-  document_url  String
+  document_urls String[]
   uploaded_at   DateTime          @default(now())
   expiry_date   DateTime?
 
@@ -112,14 +112,13 @@ model Service {
   service_id         String  @id @default(cuid())
   name               String
   description        String?
-  required_documents Json? // JSON object describing required docs
-
-  department_id String
-  department    Department @relation(fields: [department_id], references: [department_id])
-
-  appointments   Appointment[]
-  form_templates FormTemplate[]
-  Location       Location[]
+  required_documents Json?
+  department_id      String
+  department         Department    @relation(fields: [department_id], references: [department_id])
+  appointments       Appointment[]
+  form_templates     FormTemplate[]
+  locations          Location[]
+  time_slots         TimeSlot[] @relation("ServiceTimeSlots")
 }
 
 model Admin {
@@ -134,7 +133,8 @@ model Admin {
 
   verified_kycs KYC[]
   appointments  Appointment[]
-  TimeSlot      TimeSlot[]
+
+  time_slots TimeSlot[] @relation("AdminTimeSlots")
 }
 
 model Appointment {
@@ -142,7 +142,6 @@ model Appointment {
   appointment_datetime DateTime
   status               AppointmentStatus @default(Booked)
   reference_number     String            @unique @default(cuid()) // Or a custom generator
-  // qr_code_data         String            @unique @default(cuid()) // Or a custom generator - REMOVED: Column doesn't exist in database
   created_at           DateTime          @default(now())
 
   citizen_id String
@@ -156,9 +155,11 @@ model Appointment {
 
   documents           AppointmentDocument[]
   feedback            Feedback?
-  TimeSlot            TimeSlot?             @relation(fields: [timeSlotTimeslot_id], references: [timeslot_id])
-  timeSlotTimeslot_id String?
-  Notification        Notification[]
+
+  timeSlotTimeslot_id    String?
+  timeslot               TimeSlot?         @relation("TimeSlotAppointments", fields: [timeSlotTimeslot_id], references: [timeslot_id])
+
+  notifications       Notification[]
 }
 
 model AppointmentDocument {
@@ -234,28 +235,6 @@ model ContentChangeLog {
   web_page    WebPageRecord? @relation(fields: [web_page_id], references: [id])
 }
 
-model Location {
-  id      String @id @default(cuid())
-  address String
-
-  service_id String
-  service    Service    @relation(fields: [service_id], references: [service_id])
-  TimeSlot   TimeSlot[]
-}
-
-model TimeSlot {
-  timeslot_id      String   @id @default(cuid())
-  slot_datetime    DateTime // The start date and time of the slot
-  location_id      String
-  location         Location @relation(fields: [location_id], references: [id])
-  max_appointments Int      @default(50) // Max capacity for this slot
-
-  assigned_admin_id String
-  assigned_admin    Admin  @relation(fields: [assigned_admin_id], references: [admin_id])
-
-  appointments Appointment[] // Appointments booked for this slot
-}
-
 model Notification {
   notification_id String               @id @default(cuid())
   message         String
@@ -276,4 +255,53 @@ model Notification {
 
   @@index([citizen_id])
   @@index([appointment_id])
+}
+
+
+model Location {
+  id          String @id @default(cuid())
+  address     String
+  service_id  String
+  service     Service @relation(fields: [service_id], references: [service_id])
+  time_slots  TimeSlot[] @relation("LocationTimeSlots")
+}
+
+model TimeSlot {
+  timeslot_id      String   @id @default(cuid())
+  slot_datetime    DateTime 
+  location_id      String
+  location         Location @relation("LocationTimeSlots", fields: [location_id], references: [id])
+  max_appointments Int      @default(50) 
+  assigned_admin_id String?
+  assigned_admin Admin? @relation("AdminTimeSlots", fields: [assigned_admin_id], references: [admin_id])
+  appointments     Appointment[] @relation("TimeSlotAppointments")
+  appointment_ids String[] @default([])
+  service_id String?
+  service         Service? @relation("ServiceTimeSlots", fields: [service_id], references: [service_id])
+}
+
+model WebPageRecord {
+  id              String   @id @default(cuid())
+  url             String   @unique
+  content_hash    String   // SHA-256 hash
+  last_checked    DateTime @default(now())
+  last_modified   DateTime @default(now()) @updatedAt
+  is_active       Boolean  @default(true)
+  content_preview String?  // First 500 chars
+  error_count     Int      @default(0)
+  created_at      DateTime @default(now())
+
+  changes ContentChangeLog[]
+}
+
+model ContentChangeLog {
+  id           String   @id @default(cuid())
+  url          String
+  old_hash     String?
+  new_hash     String
+  change_type  String   // 'new', 'updated', 'deleted'
+  detected_at  DateTime @default(now())
+
+  web_page_id  String?
+  web_page     WebPageRecord? @relation(fields: [web_page_id], references: [id])
 }
