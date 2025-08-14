@@ -28,17 +28,11 @@ class ChromaDataLoader:
         
         # Create or get collection with metadata
         self.collection = self.client.get_or_create_collection(
-            name="government_services",
+            name=get_settings().CHROMADB_COLLECTION_NAME,
             embedding_function=self.embedding_function,
             metadata={"hnsw:space": "cosine"}  # Use cosine similarity for better matching
         )
-        
-        # Create or get the collection
-        self.collection = self.client.get_or_create_collection(
-            name="government_services",
-            embedding_function=self.embedding_function
-        )
-        
+
         self.scraped_data_path = Path(__file__).parent.parent / 'scraped_data'
     
     def _generate_document_id(self, content: str, url: str) -> str:

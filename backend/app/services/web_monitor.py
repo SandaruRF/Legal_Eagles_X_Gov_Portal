@@ -129,16 +129,38 @@ class GovernmentWebMonitor:
             if not current_content:
                 logger.warning(f"No content extracted from {url}")
                 return None
-            
+
             current_hash = self.generate_content_hash(current_content)
+            logger.debug(f"Current hash for {url}: {current_hash}")
+
+            # Get stored hash from database with retry logic
+            stored_record = None
+            max_retries = 3
             
-            # Get stored hash from database
-            stored_record = await self.repo.get_url_record(url)
-            
+            for attempt in range(max_retries):
+                try:
+                    stored_record = await self.repo.get_url_record(url)
+                    logger.debug(f"Database lookup attempt {attempt + 1}: {'Success' if stored_record is not None else 'No record found'}")
+                    break
+                except Exception as e:
+                    logger.warning(f"Database lookup attempt {attempt + 1} failed: {str(e)}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(1)  # Wait 1 second before retry
+
             if not stored_record:
                 # New URL - store and mark as new
-                await self.repo.store_url_hash(url, current_hash, current_content)
                 logger.info(f"New URL detected: {url}")
+                
+                # Try to store the new record
+                for attempt in range(max_retries):
+                    try:
+                        await self.repo.store_url_hash(url, current_hash, current_content)
+                        logger.info(f"Successfully stored new URL: {url}")
+                        break
+                    except Exception as e:
+                        logger.warning(f"Store attempt {attempt + 1} failed: {str(e)}")
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(1)
                 
                 return ContentChange(
                     url=url,
@@ -148,26 +170,27 @@ class GovernmentWebMonitor:
                     timestamp=datetime.utcnow(),
                     change_type="new"
                 )
-            
+
             stored_hash = stored_record.content_hash
-            
+            logger.debug(f"Stored hash for {url}: {stored_hash}")
+
             if stored_hash != current_hash:
                 # Content changed
-                await self.repo.update_url_hash(url, current_hash, current_content)
                 logger.info(f"Content changed for URL: {url}")
                 
+                await self.repo.update_url_hash(url, current_hash, current_content)
+                
+                # Update ChromaDB
                 try:
                     await self.kb_service.store_webpage_content(
                         url=url,
                         content=current_content,
                         timestamp=datetime.utcnow()
                     )
-                    logger.info(f"Updated knowledge base for changed content: {url}")
+                    logger.info(f"Updated knowledge base for: {url}")
                 except Exception as e:
                     logger.warning(f"Failed to update knowledge base for {url}: {str(e)}")
-                
-                logger.info(f"Content changed for URL: {url}")
-                
+
                 return ContentChange(
                     url=url,
                     old_hash=stored_hash,
@@ -176,13 +199,15 @@ class GovernmentWebMonitor:
                     timestamp=datetime.utcnow(),
                     change_type="updated"
                 )
-            
-            logger.debug(f"No changes detected for: {url}")
-            return None
-            
+            else:
+                # No changes detected
+                logger.info(f"No changes detected for: {url}")
+                return None
+
         except Exception as e:
             logger.error(f"Error checking URL {url}: {str(e)}")
             return None
+
     
     async def monitor_government_sources(self) -> List[ContentChange]:
         """Monitor all configured government sources"""
