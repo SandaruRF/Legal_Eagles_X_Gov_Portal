@@ -2,24 +2,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .core.database import connect_db, disconnect_db
 
+# --- Routers ---
 from .routes.citizen import citizen_route
 from .routes.citizen import citizen_kyc_route
-
+from .routes.citizen import feedback   
 from .routes.admin import admin_route
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Context manager for FastAPI application lifespan events.
-    """
-    # Code to be executed before the application starts
     await connect_db()
     yield
-    # Code to be executed after the application stops
     await disconnect_db()
 
-# Create the FastAPI app instance with the lifespan manager
+
 app = FastAPI(
     title="Gov-Portal API",
     description="The official backend API for the Gov-Portal government service portal.",
@@ -27,15 +23,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# --- API Routers ---
+# ✅ Register API routers
 app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
 app.include_router(citizen_kyc_route.router, prefix="/api")
+app.include_router(feedback.router, prefix="/api")  
 
-# A simple root endpoint for health checks
 @app.get("/", tags=["Health Check"])
 async def root():
-    """
-    A simple health check endpoint to confirm the API is running.
-    """
     return {"status": "ok", "message": "Welcome to the Gov-Portal API"}
