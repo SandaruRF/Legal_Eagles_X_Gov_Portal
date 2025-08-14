@@ -7,6 +7,8 @@ from .routes.citizen import citizen_kyc_route
 from .routes.citizen import digital_vault_route
 
 from .routes.admin import admin_route
+from .routes import web_monitor
+from .routes import knowledge_base
 from app.routes.citizen.appointment_route import router as appointment_router
 from app.routes.citizen.form_route import router as form_router
 
@@ -34,6 +36,8 @@ app = FastAPI(
 app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
 app.include_router(citizen_kyc_route.router, prefix="/api")
+app.include_router(web_monitor.router, prefix="/api")
+app.include_router(knowledge_base.router, prefix="/api")
 app.include_router(appointment_router, prefix="/api")
 app.include_router(form_router, prefix="/api")
 app.include_router(digital_vault_route.router, prefix="/api")
