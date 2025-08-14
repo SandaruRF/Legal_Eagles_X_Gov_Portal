@@ -57,11 +57,16 @@ async def get_monitoring_status():
 @router.post("/check-url", response_model=ContentChangeResponse)
 async def check_specific_url(request: ManualCheckRequest):
     """Manually check a specific URL for changes"""
+    print(f"DEBUG: Starting check for URL: {request.url}")
     try:
         async with GovernmentWebMonitor() as monitor:
+            print(f"DEBUG: Monitor created successfully")
+            
             change = await monitor.check_url_for_changes(str(request.url))
+            print(f"DEBUG: Change result: {change}")
             
             if change:
+                print(f"DEBUG: Change detected - Type: {change.change_type}")
                 return ContentChangeResponse(
                     url=change.url,
                     changed=True,
@@ -71,12 +76,17 @@ async def check_specific_url(request: ManualCheckRequest):
                     new_hash=change.new_hash
                 )
             else:
+                print(f"DEBUG: No change detected")
                 return ContentChangeResponse(
                     url=str(request.url),
                     changed=False,
                     detected_at=datetime.utcnow()
                 )
     except Exception as e:
+        print(f"DEBUG: Exception occurred: {str(e)}")
+        print(f"DEBUG: Exception type: {type(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/recent-changes", response_model=List[ContentChangeResponse])
