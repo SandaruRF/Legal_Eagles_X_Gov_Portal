@@ -1,122 +1,656 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/onboarding/onboarding_screen_2.dart';
+import 'screens/onboarding/onboarding_screen_3.dart';
+import 'screens/onboarding/onboarding_screen_4.dart';
+import 'screens/onboarding/onboarding_screen_5.dart';
+import 'screens/onboarding/onboarding_screen_6.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/home/home_page_without_login.dart';
+import 'screens/kyc/kyc_verification_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
+import 'screens/auth/verify_email_screen.dart';
+import 'screens/auth/email_confirmation_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
+import 'screens/auth/password_update_screen.dart';
+import 'screens/home/home_page_signed_in.dart';
+import 'screens/home/government_sectors_screen.dart';
+import 'screens/ministry/ministry_public_security_screen.dart';
+import 'screens/ministry/ministry_transport_screen.dart';
+import 'screens/department/immigration_emigration_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
+import 'screens/vault/digital_vault_screen.dart';
+import 'screens/vault/add_driving_license_screen.dart';
+import 'screens/chat/chat_interface_screen.dart';
+import 'screens/profile/profile_screen.dart';
+import 'screens/profile/photo/profile_photo_upload_screen.dart';
+import 'screens/profile/photo/profile_photo_camera_screen.dart';
+import 'screens/profile/photo/profile_photo_completion_screen.dart';
+import 'screens/settings/settings_screen.dart';
+import 'screens/settings/change_password_screen.dart';
+import 'screens/settings/language_settings_screen.dart';
+import 'screens/settings/deactivate_account_screen.dart';
+import 'dart:io';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MainApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+      title: 'Triathalon Gov Portal',
+      theme: ThemeData(primarySwatch: Colors.orange),
+      initialRoute: '/home_signed_in',
+      routes: {
+        '/onboarding1': (context) => const OnboardingScreen(),
+        '/onboarding2': (context) => const OnboardingScreen2(),
+        '/onboarding3': (context) => const OnboardingScreen3(),
+        '/onboarding4': (context) => const OnboardingScreen4(),
+        '/onboarding5': (context) => const OnboardingScreen5(),
+        '/onboarding6': (context) => const OnboardingScreen6(),
+        '/signup': (context) => const SignupScreen(),
+        '/home_without_login': (context) => const HomePageWithoutLogin(),
+        '/kyc_verification': (context) => const KYCVerificationScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/forgot_password': (context) => const ForgotPasswordScreen(),
+        '/verify_email': (context) => const VerifyEmailScreen(),
+        '/email_confirmation': (context) => const EmailConfirmationScreen(),
+        '/reset_password': (context) => const ResetPasswordScreen(),
+        '/password_update': (context) => const PasswordUpdateScreen(),
+        '/home_signed_in': (context) => const HomePageSignedIn(),
+        '/government_sectors': (context) => const GovernmentSectorsScreen(),
+        '/ministry_public_security':
+            (context) => const MinistryPublicSecurityScreen(),
+        '/ministry_transport': (context) => const MinistryTransportScreen(),
+        '/immigration_emigration':
+            (context) => const ImmigrationEmigrationScreen(),
+        '/notifications': (context) => const NotificationsScreen(),
+        '/digital_vault': (context) => const DigitalVaultScreen(),
+        '/add_driving_license': (context) => const AddDrivingLicenseScreen(),
+        '/profile_photo_upload': (context) => const ProfilePhotoUploadScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/change_password': (context) => const ChangePasswordScreen(),
+        '/language_settings': (context) => const LanguageSettingsScreen(),
+        '/deactivate_account': (context) => const DeactivateAccountScreen(),
+      },
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/chat_interface':
+            final String? initialMessage = settings.arguments as String?;
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      ChatInterfaceScreen(initialMessage: initialMessage),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/profile':
+            final File? profileImage = settings.arguments as File?;
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      ProfileScreen(profileImage: profileImage),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/profile_photo_camera':
+            final File? imageFile = settings.arguments as File?;
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      ProfilePhotoCameraScreen(initialImage: imageFile),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/profile_photo_completion':
+            final File? selectedImage = settings.arguments as File?;
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      ProfilePhotoCompletionScreen(
+                        selectedImage: selectedImage,
+                      ),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/profile_photo_upload':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const ProfilePhotoUploadScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/onboarding1':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const OnboardingScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
 
-  final String title;
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/onboarding2':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const OnboardingScreen2(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/onboarding3':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const OnboardingScreen3(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/onboarding4':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const OnboardingScreen4(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/onboarding5':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const OnboardingScreen5(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/onboarding6':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const OnboardingScreen6(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/signup':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const SignupScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/home_without_login':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const HomePageWithoutLogin(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/kyc_verification':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const KYCVerificationScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/login':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const LoginScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/forgot_password':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const ForgotPasswordScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/verify_email':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const VerifyEmailScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/email_confirmation':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const EmailConfirmationScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/reset_password':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const ResetPasswordScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/password_update':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const PasswordUpdateScreen(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          case '/home_signed_in':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder:
+                  (context, animation, secondaryAnimation) =>
+                      const HomePageSignedIn(),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            );
+          default:
+            return null;
+        }
+      },
+      debugShowCheckedModeBanner: false,
     );
   }
 }
