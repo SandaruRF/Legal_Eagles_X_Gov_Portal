@@ -4,6 +4,8 @@ from pydantic import BaseModel
 import logging
 import google.generativeai as genai
 from app.services.knowledge_base import KnowledgeBaseService
+import os
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +18,9 @@ class SearchQuery(BaseModel):
     text: str
     limit: int = 5
 
-class SearchQueryForm(BaseModel):
+class SearchQueryForHelp(BaseModel):
     text: str
-    form: str
+    page: str
     limit: int = 5
 
 class SearchResult(BaseModel):
@@ -32,13 +34,15 @@ class SearchResponse(BaseModel):
     results: List[SearchResult]
     total_results: int
 
+
 @router.post("/search")
 async def search_government_services(query: SearchQuery):
     """Search government services using natural language"""
     try:
         kb_service = KnowledgeBaseService()
         results = await kb_service.search(query.text, query.limit)
-        
+        system_features = ["driving license medical form filling"]
+        about="""This application provides information about government services, procedures, and related topics. It aims to assist users in finding relevant information quickly and efficiently."""
         # Convert ChromaDB results to API response
         search_results = []
         
@@ -59,11 +63,23 @@ async def search_government_services(query: SearchQuery):
         prompt = f"User query: {query.text}\n\nRelevant government services:\n"
         for idx, result in enumerate(search_results, 1):
             prompt += f"{idx}. Title: {result.title}\n   Source: {result.source}\n   Content: {result.content}\n\n"
-        prompt += "Based on the above, provide a helpful answer to the user's query."
+        prompt += """Based on the above, You are a helpful and respectful government service information assistant. Your job is to answer user queries about government services, procedures, and information in a clear, polite, and professional manner.
+        system features : {system_features}
+        about system : {about}
+
+Always:
+- Address the user respectfully.
+- Provide accurate and concise information.
+- Format your response with headings, bullet points, and clear sections for readability.
+- If possible, include links or references to official sources but do it only if system not have that facility.
+
+Please provide a well-formatted, easy-to-read answer to the user's query. """
 
         # Call Gemini
-        genai.configure(api_key="AIzaSyDmc7spscGG_Fo2nxzdU0MxMNG3P2jVx9o")
-        model = genai.GenerativeModel("gemini-pro")
+        print("Gemini API Key:", settings.GEMINI_API_KEY)
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        # print(list(genai.list_models()))
+        model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
         gemini_response = model.generate_content(prompt)
         final_response = gemini_response.text if hasattr(gemini_response, "text") else str(gemini_response)
         
@@ -92,13 +108,21 @@ async def trigger_knowledge_update():
             "message": f"Error: {str(e)}"
         }
 
-@router.post("/search_forms")
-async def search_government_services_(query: SearchQueryForm):
+@router.post("/search_for_help")
+async def search_government_services_for_help(query: SearchQueryForHelp):
     """Search government services using natural language"""
     try:
+        page_info={
+            "home" : "this page contains a chatbot. press on text box at top to use chatbot.\n this page contains profile view option at the right top of the screen",
+            "driving_license" : "press arrow icon to send to chatbot"
+        }
         kb_service = KnowledgeBaseService()
         results = await kb_service.search(query.text, query.limit)
-        
+        system_features = ["driving license medical form filling","passport application filling"]
+        about="""This application provides information about government services, procedures, and related topics. It aims to assist users in finding relevant information quickly and efficiently."""
+        print("current page: ", query.page)
+        current=page_info[query.page]
+        print("current page info : ",current)
         # Convert ChromaDB results to API response
         search_results = []
         
@@ -119,11 +143,28 @@ async def search_government_services_(query: SearchQueryForm):
         prompt = f"User query: {query.text}\n\nRelevant government services:\n"
         for idx, result in enumerate(search_results, 1):
             prompt += f"{idx}. Title: {result.title}\n   Source: {result.source}\n   Content: {result.content}\n\n"
-        prompt += "Based on the above, provide a helpful answer to the user's query."
+        prompt = f"""You are a helpful and respectful assistant of {query.page} page of a government service information system. user is currently on your page and ask for details. Your job is to answer user queries about page`s content , government services, procedures, and information in a clear, polite, and professional manner.
+        {query.page} page content using instructions : {current}.
+        system features : {system_features}
+        about system : {about}
+        user asked this : {query.text}
+
+Always:
+- dont use Relevant government services contents if user ask for page content directly. if user ask for page content just answer using page content.
+- Address the user respectfully.
+- answer simply as possible. dont explain anything.
+- Provide accurate and concise information.
+- Format your response with headings, bullet points, and clear sections for readability.
+- If possible, include links or references to official sources but do it only if system not have that facility.
+- Please provide a well-formatted, easy-to-read answer to the user's query. 
+- Relevant government services: {search_results}.
+"""
 
         # Call Gemini
-        genai.configure(api_key="AIzaSyDmc7spscGG_Fo2nxzdU0MxMNG3P2jVx9o")
-        model = genai.GenerativeModel("gemini-pro")
+        print("Gemini API Key:", settings.GEMINI_API_KEY)
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        # print(list(genai.list_models()))
+        model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
         gemini_response = model.generate_content(prompt)
         final_response = gemini_response.text if hasattr(gemini_response, "text") else str(gemini_response)
         
