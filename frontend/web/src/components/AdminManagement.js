@@ -8,6 +8,7 @@ import {
     MdPerson,
     MdEmail,
     MdBusiness,
+    MdRefresh,
 } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
 import config from "../config/api";
@@ -427,8 +428,26 @@ const AdminManagement = ({ departmentId }) => {
                 }}
             >
                 {loading ? (
-                    <div style={{ padding: "2rem", textAlign: "center" }}>
-                        Loading admins...
+                    <div
+                        style={{
+                            padding: "2rem",
+                            textAlign: "center",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "1rem",
+                        }}
+                    >
+                        <MdRefresh
+                            style={{
+                                fontSize: "2rem",
+                                color: "#007bff",
+                                animation: "spin 1s linear infinite",
+                            }}
+                        />
+                        <span style={{ color: "#6c757d" }}>
+                            Loading admins...
+                        </span>
                     </div>
                 ) : (
                     <table

@@ -237,3 +237,64 @@ async def get_feedback_stats(db: Prisma, department_id: str) -> Dict[str, Any]:
         "recent_feedback_count": recent_count,
         "monthly_trend": monthly_trend,
     }
+
+
+async def get_feedback_rating_by_service_stats(
+    db: Prisma, department_id: str
+) -> Dict[str, Any]:
+    """Get feedback rating statistics grouped by service/appointment type"""
+
+    # Get all feedback with service details for the department
+    feedback_with_services = await db.feedback.find_many(
+        where={"appointment": {"service": {"department_id": department_id}}},
+        include={
+            "appointment": {
+                "include": {
+                    "service": True
+                }
+            }
+        },
+    )
+
+    # Group by service and calculate stats
+    service_stats = {}
+    
+    for feedback in feedback_with_services:
+        service_name = feedback.appointment.service.name
+        rating = feedback.rating
+        
+        if service_name not in service_stats:
+            service_stats[service_name] = {
+                "service_name": service_name,
+                "total_feedback": 0,
+                "total_rating": 0,
+                "rating_distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            }
+        
+        service_stats[service_name]["total_feedback"] += 1
+        service_stats[service_name]["total_rating"] += rating
+        service_stats[service_name]["rating_distribution"][rating] += 1
+    
+    # Calculate averages and satisfaction rates
+    result = []
+    for service_name, stats in service_stats.items():
+        total = stats["total_feedback"]
+        if total > 0:
+            average_rating = stats["total_rating"] / total
+            satisfaction_rate = ((stats["rating_distribution"][4] + stats["rating_distribution"][5]) / total) * 100
+        else:
+            average_rating = 0
+            satisfaction_rate = 0
+            
+        result.append({
+            "service_name": service_name,
+            "total_feedback": total,
+            "average_rating": round(average_rating, 2),
+            "satisfaction_rate": round(satisfaction_rate, 1),
+            "rating_distribution": stats["rating_distribution"]
+        })
+    
+    # Sort by total feedback descending
+    result.sort(key=lambda x: x["total_feedback"], reverse=True)
+    
+    return {"service_ratings": result}

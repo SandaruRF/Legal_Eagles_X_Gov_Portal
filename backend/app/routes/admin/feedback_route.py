@@ -5,6 +5,7 @@ from app.services.admin.feedback_service import (
     get_all_feedback,
     get_feedback_details,
     get_feedback_statistics,
+    get_feedback_rating_by_service,
 )
 from app.schemas.admin.feedback_schema import (
     FeedbackListResponse,
@@ -68,6 +69,25 @@ async def get_feedback_statistics_endpoint(current_admin=Depends(get_current_adm
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching feedback statistics: {str(e)}"
+        )
+
+
+@router.get("/feedback/rating-by-service")
+async def get_feedback_rating_by_service_endpoint(
+    current_admin=Depends(get_current_admin),
+):
+    """
+    Get feedback rating statistics grouped by service/appointment type.
+    Accessible by all authenticated admin users.
+    """
+
+    try:
+        stats = await get_feedback_rating_by_service(current_admin.department_id)
+        return stats
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching rating by service: {str(e)}"
         )
 
 

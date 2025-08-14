@@ -5,6 +5,7 @@ from app.db.admin.db_feedback import (
     get_feedback_list,
     get_feedback_by_id,
     get_feedback_stats,
+    get_feedback_rating_by_service_stats,
 )
 from app.schemas.admin.feedback_schema import (
     FeedbackListResponse,
@@ -69,3 +70,9 @@ async def get_feedback_statistics(department_id: str) -> FeedbackStatsResponse:
 
     stats = await get_feedback_stats(db, department_id)
     return FeedbackStatsResponse(**stats)
+
+
+async def get_feedback_rating_by_service(department_id: str) -> Dict[str, Any]:
+    """Get feedback rating statistics grouped by service/appointment type"""
+
+    return await get_feedback_rating_by_service_stats(db, department_id)
