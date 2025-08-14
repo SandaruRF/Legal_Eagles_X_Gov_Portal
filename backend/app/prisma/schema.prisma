@@ -1,4 +1,3 @@
-
 // 1. Define the database connection (reads from .env file)
 datasource db {
   provider = "postgresql"
@@ -39,22 +38,36 @@ enum AppointmentStatus {
   NoShow
 }
 
+// Notification
+enum NotificationPriority {
+  High
+  Medium
+  Low
+}
+
+enum NotificationType {
+  Appointment
+  Document
+  General
+}
+
 // 4. Define Database Models
 
 model Citizen {
-  citizen_id   String        @id @default(cuid())
-  full_name    String
-  nic_no       String        @unique
-  phone_no     String        @unique
-  email        String        @unique
-  password     String        // Added password field
-  created_at   DateTime      @default(now())
+  citizen_id String   @id @default(cuid())
+  full_name  String
+  nic_no     String   @unique
+  phone_no   String   @unique
+  email      String   @unique
+  password   String // Added password field
+  created_at DateTime @default(now())
 
   kyc          KYC?
   vault_docs   DigitalVaultDocument[]
   appointments Appointment[]
   filled_forms FilledForm[]
   feedback     Feedback[]
+  Notification Notification[]
 }
 
 model KYC {
@@ -64,9 +77,9 @@ model KYC {
   selfie_url    String?
   status        KYCStatus @default(Pending)
   verified_at   DateTime?
-  
-  citizen_id    String    @unique
-  citizen       Citizen   @relation(fields: [citizen_id], references: [citizen_id])
+
+  citizen_id String  @unique
+  citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
 
   verified_by_id String?
   verified_by    Admin?  @relation(fields: [verified_by_id], references: [admin_id])
@@ -75,68 +88,78 @@ model KYC {
 model DigitalVaultDocument {
   document_id   String            @id @default(cuid())
   document_type VaultDocumentType
-  document_url  String
+  document_urls String[]
   uploaded_at   DateTime          @default(now())
+  expiry_date   DateTime?
 
-  citizen_id    String
-  citizen       Citizen           @relation(fields: [citizen_id], references: [citizen_id])
+  citizen_id   String
+  citizen      Citizen        @relation(fields: [citizen_id], references: [citizen_id])
+  Notification Notification[]
 }
 
 model Department {
-  department_id String    @id @default(cuid())
-  name          String    @unique
+  department_id String  @id @default(cuid())
+  name          String  @unique
+  name_si       String?
+  name_ta       String?
   description   String?
 
-  services      Service[]
-  admins        Admin[]
+  services Service[]
+  admins   Admin[]
 }
 
 model Service {
-  service_id         String        @id @default(cuid())
+  service_id         String  @id @default(cuid())
   name               String
   description        String?
-  required_documents Json? // JSON object describing required docs
-
+  required_documents Json?
   department_id      String
   department         Department    @relation(fields: [department_id], references: [department_id])
-  
   appointments       Appointment[]
   form_templates     FormTemplate[]
+  locations          Location[]
+  time_slots         TimeSlot[] @relation("ServiceTimeSlots")
 }
 
 model Admin {
-  admin_id    String      @id @default(cuid())
-  full_name   String
-  email       String      @unique
-  password    String      // Added password field
-  role        AdminRole   @default(Officer)
-  
+  admin_id  String    @id @default(cuid())
+  full_name String
+  email     String    @unique
+  password  String // Added password field
+  role      AdminRole @default(Officer)
+
   department_id String
-  department    Department  @relation(fields: [department_id], references: [department_id])
+  department    Department @relation(fields: [department_id], references: [department_id])
 
   verified_kycs KYC[]
   appointments  Appointment[]
+
+  time_slots TimeSlot[] @relation("AdminTimeSlots")
 }
 
 model Appointment {
-  appointment_id      String            @id @default(cuid())
+  appointment_id       String            @id @default(cuid())
   appointment_datetime DateTime
-  status              AppointmentStatus @default(Booked)
-  reference_number    String            @unique @default(cuid()) // Or a custom generator
-  qr_code_data        String            @unique @default(cuid()) // Or a custom generator
-  created_at          DateTime          @default(now())
+  status               AppointmentStatus @default(Booked)
+  reference_number     String            @unique @default(cuid()) // Or a custom generator
+  created_at           DateTime          @default(now())
 
-  citizen_id          String
-  citizen             Citizen           @relation(fields: [citizen_id], references: [citizen_id])
+  citizen_id String
+  citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
 
-  service_id          String
-  service             Service           @relation(fields: [service_id], references: [service_id])
+  service_id String
+  service    Service @relation(fields: [service_id], references: [service_id])
 
-  assigned_admin_id   String?
-  assigned_admin      Admin?            @relation(fields: [assigned_admin_id], references: [admin_id])
+  assigned_admin_id String?
+  assigned_admin    Admin?  @relation(fields: [assigned_admin_id], references: [admin_id])
 
   documents           AppointmentDocument[]
   feedback            Feedback?
+
+  timeSlotTimeslot_id    String?
+  timeslot               TimeSlot?         @relation("TimeSlotAppointments", fields: [timeSlotTimeslot_id], references: [timeslot_id])
+
+  notifications       Notification[]
 }
 
 model AppointmentDocument {
@@ -145,17 +168,17 @@ model AppointmentDocument {
   document_url       String
   uploaded_at        DateTime @default(now())
 
-  appointment_id     String
-  appointment        Appointment @relation(fields: [appointment_id], references: [appointment_id])
+  appointment_id String
+  appointment    Appointment @relation(fields: [appointment_id], references: [appointment_id])
 }
 
 model FormTemplate {
-  form_id      String       @id @default(cuid())
-  form_name    String
-  template_url String // URL to a blank PDF or a template definition
-
-  service_id   String
-  service      Service      @relation(fields: [service_id], references: [service_id])
+  form_id       String  @id @default(cuid())
+  form_name     String
+  template_url  String // URL to a blank PDF or a template definition
+  form_template Json?
+  service_id    String
+  service       Service @relation(fields: [service_id], references: [service_id])
 
   filled_forms FilledForm[]
 }
@@ -166,11 +189,11 @@ model FilledForm {
   generated_pdf_url String?
   created_at        DateTime @default(now())
 
-  form_id           String
-  form_template     FormTemplate @relation(fields: [form_id], references: [form_id])
+  form_id       String
+  form_template FormTemplate @relation(fields: [form_id], references: [form_id])
 
-  citizen_id        String
-  citizen           Citizen      @relation(fields: [citizen_id], references: [citizen_id])
+  citizen_id String
+  citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
 }
 
 model Feedback {
@@ -179,11 +202,82 @@ model Feedback {
   comment      String?
   submitted_at DateTime @default(now())
 
-  appointment_id String  @unique
+  appointment_id String      @unique
   appointment    Appointment @relation(fields: [appointment_id], references: [appointment_id])
 
-  citizen_id     String
-  citizen        Citizen     @relation(fields: [citizen_id], references: [citizen_id])
+  citizen_id String
+  citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
+}
+
+model WebPageRecord {
+  id              String   @id @default(cuid())
+  url             String   @unique
+  content_hash    String // SHA-256 hash
+  last_checked    DateTime @default(now())
+  last_modified   DateTime @default(now()) @updatedAt
+  is_active       Boolean  @default(true)
+  content_preview String? // First 500 chars
+  error_count     Int      @default(0)
+  created_at      DateTime @default(now())
+
+  changes ContentChangeLog[]
+}
+
+model ContentChangeLog {
+  id          String   @id @default(cuid())
+  url         String
+  old_hash    String?
+  new_hash    String
+  change_type String // 'new', 'updated', 'deleted'
+  detected_at DateTime @default(now())
+
+  web_page_id String?
+  web_page    WebPageRecord? @relation(fields: [web_page_id], references: [id])
+}
+
+model Notification {
+  notification_id String               @id @default(cuid())
+  message         String
+  priority        NotificationPriority @default(Medium)
+  type            NotificationType
+  is_read         Boolean              @default(false)
+  created_at      DateTime             @default(now())
+
+  citizen_id String
+  citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
+
+  // Optional relations to other models
+  appointment_id String?
+  appointment    Appointment? @relation(fields: [appointment_id], references: [appointment_id])
+
+  document_id String?
+  document    DigitalVaultDocument? @relation(fields: [document_id], references: [document_id])
+
+  @@index([citizen_id])
+  @@index([appointment_id])
+}
+
+
+model Location {
+  id          String @id @default(cuid())
+  address     String
+  service_id  String
+  service     Service @relation(fields: [service_id], references: [service_id])
+  time_slots  TimeSlot[] @relation("LocationTimeSlots")
+}
+
+model TimeSlot {
+  timeslot_id      String   @id @default(cuid())
+  slot_datetime    DateTime 
+  location_id      String
+  location         Location @relation("LocationTimeSlots", fields: [location_id], references: [id])
+  max_appointments Int      @default(50) 
+  assigned_admin_id String?
+  assigned_admin Admin? @relation("AdminTimeSlots", fields: [assigned_admin_id], references: [admin_id])
+  appointments     Appointment[] @relation("TimeSlotAppointments")
+  appointment_ids String[] @default([])
+  service_id String?
+  service         Service? @relation("ServiceTimeSlots", fields: [service_id], references: [service_id])
 }
 
 model WebPageRecord {

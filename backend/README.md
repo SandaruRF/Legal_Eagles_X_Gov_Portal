@@ -102,6 +102,8 @@ This command creates a migration file based on your schema.prisma changes and ap
 
 *(Note: The \--schema flag points to the location of the schema file)*
 
+
+*(Note: No need to run the below command)*
 prisma db push \--schema=./app/prisma/schema.prisma
 
 This command will create a migration file and apply it to the database. For subsequent changes, you can give the migration a more descriptive name (e.g., add\_feedback\_model).
