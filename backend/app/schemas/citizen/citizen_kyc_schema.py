@@ -11,4 +11,4 @@ class KYCStatusResponse(BaseModel):
     selfie_url: str | None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
