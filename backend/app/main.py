@@ -6,6 +6,8 @@ from .routes.citizen import citizen_route
 from .routes.citizen import citizen_kyc_route
 
 from .routes.admin import admin_route
+from app.routes.citizen.appointment_route import router as appointment_router
+from app.routes.citizen.form_route import router as form_router
 
 
 @asynccontextmanager
@@ -31,6 +33,8 @@ app = FastAPI(
 app.include_router(citizen_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
 app.include_router(citizen_kyc_route.router, prefix="/api")
+app.include_router(appointment_router, prefix="/api")
+app.include_router(form_router, prefix="/api")
 
 # A simple root endpoint for health checks
 @app.get("/", tags=["Health Check"])
