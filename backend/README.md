@@ -101,7 +101,7 @@ pip install \-r requirements.txt
 This command creates a migration file based on your schema.prisma changes and applies it to the database. This is the standard way to manage schema changes during development.
 
 *(Note: The \--schema flag points to the location of the schema file)*
-prisma generate \--schema=./app/prisma/schema.prisma
+
 
 *(Note: No need to run the below command)*
 prisma db push \--schema=./app/prisma/schema.prisma
