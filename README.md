@@ -20,3 +20,46 @@ This project is built with a modern, scalable, and robust technology stack:
 * **ORM:** Prisma Client for Python  
 * **Mobile App (Citizen):** Flutter
 * **Web App (Admin/Officer):** React
+
+## **Prerequisites**
+
+Before you begin, ensure you have the following installed on your system:
+
+* [Docker](https://docs.docker.com/get-docker/)  
+* [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
+
+## **Environment Variables (Critical for Security)**
+
+This project uses sensitive information (API keys, database passwords, etc.). To keep these secrets secure and out of version control, you must create a .env file in the root directory of the project.
+
+1. **Create the file:**  
+   touch .env
+
+2. **Add the following variables to your .env file**, replacing the placeholder values with your actual credentials:  
+   \# .env
+
+   \# Backend Environment Variables  
+   DATABASE\_URL="database\_url\_from\_supabase"  
+   SUPABASE\_URL="https\_your\_supabase\_url"  
+   SUPABASE\_KEY="your\_supabase\_key"  
+   SECRET\_KEY="your\_very\_secret\_key"  
+   ALGORITHM="HS256"  
+   ACCESS\_TOKEN\_EXPIRE\_MINUTES=43200  
+   CELERY\_BROKER\_URL="redis://redis:6379/0"  
+   CELERY\_RESULT\_BACKEND="redis://redis:6379/0"  
+   GEMINI\_API\_KEY="your\_gemini\_api\_key"
+
+## **Deployment**
+
+This project's backend, admin dashboard are published on huggingface. also, you can access the mobile apk.
+
+1. **Backend**
+   * [Huggingface Logs](https://huggingface.co/spaces/anuhasip/gov-portal-backend?logs=container)
+   * [Swagger API Docs](https://anuhasip-gov-portal-backend.hf.space/docs#)
+
+2. **Admin Dashboard**
+    * [Huggingface Logs](https://huggingface.co/spaces/anuhasip/gov-portal-admin-dashboard?logs=container)
+    * [View Admin Dashboard](https://anuhasip-gov-portal-admin-dashboard.hf.space/)
+
+3. **Mobile App (Citizen)**
+    * [APK File](https://google.com)
