@@ -20,6 +20,7 @@ from .routes import web_monitor
 from .routes import knowledge_base
 from app.routes.citizen.appointment_route import router as appointment_router
 from app.routes.citizen.form_route import router as form_router
+from app.routes.citizen.search_route import router as search_router
 
 
 @asynccontextmanager
@@ -68,7 +69,7 @@ app.include_router(form_router, prefix="/api")
 app.include_router(digital_vault_route.router, prefix="/api")
 app.include_router(citizen_feedback_route.router, prefix="/api/citizen/feedback")
 app.include_router(admin_feedback_route.router, prefix="/api/admin/feedback")
- 
+app.include_router(search_router, prefix="/api")
 
 
 @app.get("/", tags=["Health Check"])
