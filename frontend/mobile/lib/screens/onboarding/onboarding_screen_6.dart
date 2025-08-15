@@ -143,7 +143,7 @@ class OnboardingScreen6 extends ConsumerWidget {
                   ),
 
                   SizedBox(
-                    height: screenHeight * 0.03,
+                    height: screenHeight * 0.06,
                   ), // Reduced spacing for higher positioning
                   // Main title
                   Padding(

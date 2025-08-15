@@ -18,11 +18,11 @@ class OnboardingScreen4 extends ConsumerWidget {
         children: [
           // Background illustration image
           Positioned(
-            left: -screenWidth * 0.058,
-            top: screenHeight * 0.49,
+            left: -screenWidth * 0.100,
+            top: screenHeight * 0.47,
             child: Container(
-              width: screenWidth * 1.11,
-              height: screenWidth * 1.11,
+              width: screenWidth * 1.20,
+              height: screenWidth * 1.20,
               decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage(
@@ -143,7 +143,7 @@ class OnboardingScreen4 extends ConsumerWidget {
                   ),
 
                   SizedBox(
-                    height: screenHeight * 0.03,
+                    height: screenHeight * 0.07,
                   ), // Reduced spacing for higher positioning
                   // Main title
                   Padding(
@@ -169,7 +169,7 @@ class OnboardingScreen4 extends ConsumerWidget {
                   // Subtitle
                   Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.08,
+                      horizontal: screenWidth * 0.18,
                     ), // Wider padding
                     child: Text(
                       'Mention about form filling',

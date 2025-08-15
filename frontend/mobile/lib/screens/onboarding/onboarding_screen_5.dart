@@ -19,7 +19,7 @@ class OnboardingScreen5 extends ConsumerWidget {
           // Background illustration image
           Positioned(
             left: -screenWidth * 0.165,
-            top: screenHeight * 0.35,
+            top: screenHeight * 0.41,
             child: Container(
               width: screenWidth * 1.32,
               height: screenWidth * 1.32,
@@ -143,12 +143,12 @@ class OnboardingScreen5 extends ConsumerWidget {
                   ),
 
                   SizedBox(
-                    height: screenHeight * 0.05,
+                    height: screenHeight * 0.1,
                   ), // Reduced spacing for higher positioning
                   // Main title
                   Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.08,
+                      horizontal: screenWidth * 0.13,
                     ), // Wider padding
                     child: Text(
                       'Digital ID support',
@@ -169,7 +169,7 @@ class OnboardingScreen5 extends ConsumerWidget {
                   // Subtitle
                   Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.08,
+                      horizontal: screenWidth * 0.12,
                     ), // Wider padding
                     child: Text(
                       'Mention about Digital documents',

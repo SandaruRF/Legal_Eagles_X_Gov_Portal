@@ -9,6 +9,86 @@ class AppointmentsService {
 
   final HttpClientService _httpClient = HttpClientService();
 
+  /// Get appointments by status using the new endpoint
+  Future<ApiResponse<List<Appointment>>> getAppointmentsByStatus(
+    String status,
+  ) async {
+    try {
+      print('Fetching appointments with status: $status');
+
+      final response = await _httpClient.get(
+        '/api/appointments/status/$status',
+        fromJson: (data) => data, // Pass the data through directly
+      );
+
+      print('Appointments API Response Status: ${response.statusCode}');
+      print('Appointments API Response Data: ${response.data}');
+      print('Appointments API Response Message: ${response.message}');
+
+      if (response.success) {
+        // The response.data will be the entire parsed JSON response
+        Map<String, dynamic> responseData;
+
+        if (response.data != null) {
+          responseData = response.data as Map<String, dynamic>;
+        } else {
+          // Handle case where data is null but we have a successful response
+          // This shouldn't happen with proper JSON parsing, but let's handle it
+          return ApiResponse<List<Appointment>>.error(
+            message:
+                'Response parsing error: data is null despite successful response',
+          );
+        }
+
+        // Check if the response has the expected structure
+        if (responseData['status'] == 'success' &&
+            responseData['appointments'] != null) {
+          final List<dynamic> appointmentsData =
+              responseData['appointments'] as List<dynamic>;
+
+          final appointments =
+              appointmentsData
+                  .map(
+                    (json) =>
+                        Appointment.fromJson(json as Map<String, dynamic>),
+                  )
+                  .toList();
+
+          print('Parsed ${appointments.length} appointments');
+
+          return ApiResponse<List<Appointment>>.success(
+            data: appointments,
+            message: 'Appointments fetched successfully',
+          );
+        } else {
+          return ApiResponse<List<Appointment>>.error(
+            message:
+                'Invalid response format from server: ${responseData.toString()}',
+          );
+        }
+      } else {
+        // Handle authentication error specifically
+        if (response.statusCode == 401) {
+          return ApiResponse<List<Appointment>>.error(
+            message: 'Authentication failed. Please log in again.',
+          );
+        }
+
+        return ApiResponse<List<Appointment>>.error(
+          message:
+              response.message.isNotEmpty
+                  ? response.message
+                  : 'Failed to fetch appointments',
+        );
+      }
+    } catch (e) {
+      print('Error fetching appointments: $e');
+      return ApiResponse<List<Appointment>>.error(
+        message: 'Network error: ${e.toString()}',
+      );
+    }
+  }
+
   /// Get appointments by status
   Future<ApiResponse<List<Appointment>>> getAppointments({
     required String status,

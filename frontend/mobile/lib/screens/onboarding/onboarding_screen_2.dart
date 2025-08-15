@@ -40,7 +40,7 @@ class OnboardingScreen2 extends ConsumerWidget {
           Positioned(
             left:
                 -screenWidth * 0.425, // Responsive centering for larger screens
-            top: screenHeight * 0.22,
+            top: screenHeight * 0.24, // Moved down from 0.22 to 0.28
             child: Container(
               width: screenWidth * 1.87, // Responsive width
               height: screenWidth * 1.87, // Maintain aspect ratio
@@ -61,7 +61,7 @@ class OnboardingScreen2 extends ConsumerWidget {
                 vertical: screenHeight * 0.02,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Top section with Skip all button
                   SizedBox(height: screenHeight * 0.01), // Small top spacing
@@ -141,7 +141,7 @@ class OnboardingScreen2 extends ConsumerWidget {
                         fontWeight: FontWeight.w800,
                         fontSize: 36, // Fixed larger font size for beauty
                         color: const Color(0xFF000000),
-                        height: 1.2,
+                        height: 2.8,
                         letterSpacing: 0.5, // Better letter spacing
                       ),
                       textAlign: TextAlign.center, // Center align for beauty

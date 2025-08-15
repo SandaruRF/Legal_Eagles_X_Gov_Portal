@@ -64,8 +64,8 @@ class _StartupScreenState extends ConsumerState<StartupScreen> {
           children: [
             // Gov Portal logo
             Container(
-              width: 80,
-              height: 80,
+              width: 240,
+              height: 240,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 image: const DecorationImage(

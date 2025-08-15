@@ -18,7 +18,7 @@ class OnboardingScreen3 extends ConsumerWidget {
         children: [
           // Background curved section
           Positioned(
-            left: screenWidth * 0.043,
+            left: screenWidth * 0.01, // Moved left from 0.043 to 0.01
             top: screenHeight * 0.28,
             child: Container(
               width: screenWidth * 1.12,
@@ -36,11 +36,11 @@ class OnboardingScreen3 extends ConsumerWidget {
 
           // Background illustration image
           Positioned(
-            left: -screenWidth * 0.46,
-            top: screenHeight * 0.44,
+            left: -screenWidth * 0.35, // Moved right from -0.5 to -0.47
+            top: screenHeight * 0.45, // Moved down from 0.4 to 0.42
             child: Container(
-              width: screenWidth * 1.76,
-              height: screenHeight * 0.68,
+              width: screenWidth * 1.7, // Reduced from 1.76 to 1.5
+              height: screenHeight * 0.58, // Reduced from 0.68 to 0.58
               decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage(

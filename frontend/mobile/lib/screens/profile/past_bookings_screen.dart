@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
 import '../../models/appointment.dart';
 import '../../core/services/appointments_service.dart';
 
@@ -29,7 +30,9 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
     });
 
     try {
-      final response = await _appointmentsService.getCompletedAppointments();
+      final response = await _appointmentsService.getAppointmentsByStatus(
+        'Completed',
+      );
 
       if (response.success && response.data != null) {
         setState(() {
@@ -106,7 +109,7 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
                               const Text(
                                 'Gov Portal',
                                 style: TextStyle(
@@ -114,73 +117,7 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF171717),
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Notification icon
-                        Container(
-                          width: 18.74,
-                          height: 14.56,
-                          margin: const EdgeInsets.only(right: 16),
-                          child: const Icon(
-                            Icons.notifications_outlined,
-                            size: 18,
-                            color: Color(0xFF525252),
-                          ),
-                        ),
-
-                        // Avatar
-                        Container(
-                          width: 53,
-                          height: 53,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                          ),
-                          child: Stack(
-                            children: [
-                              // Outer circle with border
-                              Container(
-                                width: 53,
-                                height: 53,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 3,
-                                  ),
-                                ),
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Color(0xFF384455),
-                                  ),
-                                  child: ClipOval(
-                                    child: Image.asset(
-                                      'assets/images/avatar_image-56586a.png',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              // Online status indicator
-                              Positioned(
-                                right: 1.5,
-                                bottom: 1.5,
-                                child: Container(
-                                  width: 13,
-                                  height: 13,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: const Color(0xFF27D79E),
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 1.5,
-                                    ),
-                                  ),
+                                  height: 1.9,
                                 ),
                               ),
                             ],
@@ -191,37 +128,13 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
                   ),
                 ),
 
-                // Page Title Section
-                Container(
-                  width: double.infinity,
-                  height: 64,
-                  color: const Color(0xFFFAFAFA),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Past Bookings',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF171717),
-                        height: 1.21,
-                      ),
-                    ),
-                  ),
-                ),
-
                 // Content Section
                 Expanded(
                   child: Container(
                     color: Colors.white,
                     padding: const EdgeInsets.all(16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const SizedBox(height: 16),
 
@@ -230,7 +143,7 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
                           'Past Bookings',
                           style: TextStyle(
                             fontFamily: 'Inter',
-                            fontSize: 18,
+                            fontSize: 25,
                             fontWeight: FontWeight.w400,
                             color: Color(0xFF171717),
                             height: 1.56,
@@ -262,107 +175,19 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
             ),
 
             // Bottom Navigation
-            _buildBottomNavigation(),
+            Positioned(
+              bottom: -10, // Lowered by 10 pixels
+              left: 0,
+              right: 0,
+              child: const CustomBottomNavigationBar(
+                currentPage: 'past_bookings',
+              ),
+            ),
 
             // Floating Action Button for Chatbot
             _buildFloatingChatbotButton(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigation() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 88,
-        color: const Color(0xFFF2F2F2),
-        child: Column(
-          children: [
-            // Tab bar icons
-            Container(
-              height: 46.25,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 41.22,
-                vertical: 9.3,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavIcon(Icons.home, false),
-                  _buildNavIcon(Icons.search, false),
-                  _buildNavIcon(Icons.notifications, false),
-                  _buildNavIcon(Icons.settings, false),
-                ],
-              ),
-            ),
-            // Tab bar labels
-            Container(
-              height: 35.01,
-              padding: const EdgeInsets.symmetric(horizontal: 37.69),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Home',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Search',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Notification',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavIcon(IconData icon, bool isSelected) {
-    return SizedBox(
-      width: 23.33,
-      height: 26.65,
-      child: Icon(
-        icon,
-        size: 24,
-        color: isSelected ? const Color(0xFFFF5B00) : const Color(0xFF809FB8),
       ),
     );
   }

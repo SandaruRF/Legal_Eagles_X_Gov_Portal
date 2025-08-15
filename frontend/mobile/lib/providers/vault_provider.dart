@@ -39,21 +39,39 @@ class VaultNotifier extends StateNotifier<VaultState> {
 
   /// Fetch vault documents from API
   Future<void> fetchVaultDocuments() async {
+    print('VaultProvider - Starting fetch');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final response = await _vaultService.getVaultDocuments();
+      print(
+        'VaultProvider - Response received: success=${response.success}, data length=${response.data?.length}',
+      );
 
       if (response.success && response.data != null) {
+        print(
+          'VaultProvider - Setting documents: ${response.data!.length} documents',
+        );
+        for (int i = 0; i < response.data!.length; i++) {
+          print(
+            'VaultProvider - Document $i: ${response.data![i].displayName}',
+          );
+        }
+
         state = state.copyWith(
           documents: response.data!,
           isLoading: false,
           error: null,
         );
+        print(
+          'VaultProvider - State updated, documents in state: ${state.documents.length}',
+        );
       } else {
+        print('VaultProvider - Error: ${response.message}');
         state = state.copyWith(isLoading: false, error: response.message);
       }
     } catch (e) {
+      print('VaultProvider - Exception: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to fetch vault documents: ${e.toString()}',

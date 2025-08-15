@@ -16,23 +16,84 @@ class VaultService {
   /// Fetch all vault documents for the current user
   Future<ApiResponse<List<VaultDocument>>> getVaultDocuments() async {
     try {
-      final response = await _httpClient.get<List<VaultDocument>>(
+      final response = await _httpClient.get(
         ApiConfig.vaultDocuments,
-        fromJson: (data) {
-          if (data is List) {
-            return data
-                .map(
-                  (item) =>
-                      VaultDocument.fromJson(item as Map<String, dynamic>),
-                )
-                .toList();
-          }
-          return <VaultDocument>[];
-        },
+        fromJson: (data) => data, // Pass data through directly
       );
 
-      return response;
+      print('Vault Service - Response success: ${response.success}');
+      print('Vault Service - Response data: ${response.data}');
+      print('Vault Service - Response data type: ${response.data.runtimeType}');
+
+      if (response.success && response.data != null) {
+        // Handle the case where data is directly an array or a string
+        List<dynamic> documentsJson;
+
+        if (response.data is String) {
+          // Parse the JSON string
+          try {
+            final parsedData = jsonDecode(response.data as String);
+            if (parsedData is List) {
+              documentsJson = parsedData;
+              print(
+                'Vault Service - Parsed string to array with ${documentsJson.length} documents',
+              );
+            } else {
+              documentsJson = [];
+              print(
+                'Vault Service - Parsed string but not an array: ${parsedData.runtimeType}',
+              );
+            }
+          } catch (e) {
+            print('Vault Service - Error parsing JSON string: $e');
+            documentsJson = [];
+          }
+        } else if (response.data is List) {
+          documentsJson = response.data as List<dynamic>;
+          print(
+            'Vault Service - Found ${documentsJson.length} documents in array',
+          );
+        } else if (response.data is Map && response.data['documents'] != null) {
+          documentsJson = response.data['documents'] as List<dynamic>;
+          print(
+            'Vault Service - Found ${documentsJson.length} documents in map',
+          );
+        } else {
+          documentsJson = [];
+          print(
+            'Vault Service - No documents found, data structure: ${response.data}',
+          );
+        }
+
+        final documents = <VaultDocument>[];
+        for (int i = 0; i < documentsJson.length; i++) {
+          try {
+            final item = documentsJson[i] as Map<String, dynamic>;
+            print('Vault Service - Parsing document $i: $item');
+            final document = VaultDocument.fromJson(item);
+            documents.add(document);
+            print(
+              'Vault Service - Successfully parsed document: ${document.displayName}',
+            );
+          } catch (e) {
+            print('Vault Service - Error parsing document $i: $e');
+          }
+        }
+
+        print('Vault Service - Final documents count: ${documents.length}');
+
+        return ApiResponse<List<VaultDocument>>.success(
+          data: documents,
+          message: 'Vault documents fetched successfully',
+        );
+      } else {
+        print('Vault Service - Response failed: ${response.message}');
+        return ApiResponse<List<VaultDocument>>.error(
+          message: response.message,
+        );
+      }
     } catch (e) {
+      print('Vault Service - Exception: $e');
       return ApiResponse<List<VaultDocument>>.error(
         message: 'Failed to fetch vault documents: ${e.toString()}',
       );
@@ -46,6 +107,11 @@ class VaultService {
     DateTime? expiryDate,
   }) async {
     try {
+      print('Upload Service - Starting upload with:');
+      print('  Document type: ${documentType.value}');
+      print('  Files count: ${filePaths.length}');
+      print('  Expiry date: $expiryDate');
+
       if (filePaths.isEmpty) {
         return ApiResponse<VaultDocument>.error(
           message: 'No files selected for upload',
@@ -67,8 +133,13 @@ class VaultService {
       // Add form fields
       request.fields['doc_type'] = documentType.value;
       if (expiryDate != null) {
-        request.fields['expiry_date'] =
-            expiryDate.toIso8601String().split('T')[0];
+        // Format date as YYYY-MM-DD string to ensure proper serialization
+        final formattedDate =
+            '${expiryDate.year.toString().padLeft(4, '0')}-${expiryDate.month.toString().padLeft(2, '0')}-${expiryDate.day.toString().padLeft(2, '0')}';
+        request.fields['expiry_date'] = formattedDate;
+        print('Upload - Formatted expiry date: $formattedDate');
+      } else {
+        print('Upload - No expiry date provided');
       }
 
       // Add all files

@@ -9,16 +9,22 @@ enum VaultDocumentType {
   final String value;
 
   static VaultDocumentType? fromString(String value) {
+    print('VaultDocumentType.fromString called with: "$value"');
     switch (value.toLowerCase()) {
       case 'nic':
+        print('Parsed as NIC');
         return VaultDocumentType.nic;
       case 'passport':
+        print('Parsed as Passport');
         return VaultDocumentType.passport;
       case 'license':
+        print('Parsed as License');
         return VaultDocumentType.license;
       case 'birthcertificate':
+        print('Parsed as BirthCertificate');
         return VaultDocumentType.birthCertificate;
       default:
+        print('No match found for: "$value", defaulting to null');
         return null;
     }
   }
@@ -53,24 +59,43 @@ class VaultDocument {
   });
 
   factory VaultDocument.fromJson(Map<String, dynamic> json) {
-    return VaultDocument(
+    print('VaultDocument.fromJson called with: $json');
+
+    final documentType =
+        VaultDocumentType.fromString(json['document_type'] ?? '') ??
+        VaultDocumentType.nic;
+
+    print('Document type parsed as: $documentType');
+
+    final documentUrls =
+        json['document_urls'] != null
+            ? List<String>.from(json['document_urls'])
+            : <String>[];
+
+    print('Document URLs: $documentUrls');
+
+    final uploadedAt =
+        json['uploaded_at'] != null
+            ? DateTime.parse(json['uploaded_at'])
+            : DateTime.now();
+
+    final expiryDate =
+        json['expiry_date'] != null
+            ? DateTime.parse(json['expiry_date'])
+            : null;
+
+    final document = VaultDocument(
       documentId: json['document_id'] ?? '',
-      documentType:
-          VaultDocumentType.fromString(json['document_type'] ?? '') ??
-          VaultDocumentType.nic,
-      documentUrls:
-          json['document_urls'] != null
-              ? List<String>.from(json['document_urls'])
-              : [],
-      uploadedAt:
-          json['uploaded_at'] != null
-              ? DateTime.parse(json['uploaded_at'])
-              : DateTime.now(),
-      expiryDate:
-          json['expiry_date'] != null
-              ? DateTime.parse(json['expiry_date'])
-              : null,
+      documentType: documentType,
+      documentUrls: documentUrls,
+      uploadedAt: uploadedAt,
+      expiryDate: expiryDate,
     );
+
+    print(
+      'Created VaultDocument: ID=${document.documentId}, Type=${document.displayName}',
+    );
+    return document;
   }
 
   Map<String, dynamic> toJson() {
