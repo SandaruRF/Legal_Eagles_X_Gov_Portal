@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../models/appointment.dart';
+import '../../core/services/appointments_service.dart';
 
 class PastBookingsScreen extends StatefulWidget {
   const PastBookingsScreen({super.key});
@@ -9,6 +11,45 @@ class PastBookingsScreen extends StatefulWidget {
 }
 
 class _PastBookingsScreenState extends State<PastBookingsScreen> {
+  final AppointmentsService _appointmentsService = AppointmentsService();
+  List<Appointment> _appointments = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPastBookings();
+  }
+
+  Future<void> _fetchPastBookings() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final response = await _appointmentsService.getCompletedAppointments();
+
+      if (response.success && response.data != null) {
+        setState(() {
+          _appointments = response.data!;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = response.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load past bookings: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -198,184 +239,21 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
 
                         const SizedBox(height: 16),
 
-                        // First Booking Card - License Health Check
-                        Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E5E5)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(17),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title and Completed status
-                                Row(
-                                  children: [
-                                    const Expanded(
-                                      child: Text(
-                                        'License Health Check',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          color: Color(0xFF171717),
-                                          height: 1.5,
-                                        ),
-                                      ),
+                        // Content based on loading state
+                        Expanded(
+                          child:
+                              _isLoading
+                                  ? const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFFFF5B00),
                                     ),
-
-                                    const SizedBox(width: 12),
-
-                                    // Completed status
-                                    Container(
-                                      height: 24,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF279541),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'Completed',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.white,
-                                          height: 1.21,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 7),
-
-                                // Submitted date
-                                const Text(
-                                  'Submitted: January 10, 2025 at 2:30 PM',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF525252),
-                                    height: 1.21,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 7),
-
-                                // Appointment date
-                                const Text(
-                                  'Appointment: January 15, 2025 at 10:00 AM',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF525252),
-                                    height: 1.21,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                                  )
+                                  : _errorMessage.isNotEmpty
+                                  ? _buildErrorWidget()
+                                  : _appointments.isEmpty
+                                  ? _buildEmptyWidget()
+                                  : _buildAppointmentsList(),
                         ),
-
-                        // Second Booking Card - Driving License Medical Appointment
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E5E5)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(17),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title and Completed status
-                                Row(
-                                  children: [
-                                    const Expanded(
-                                      child: Text(
-                                        'Driving License Medical Appointment',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          color: Color(0xFF171717),
-                                          height: 1.5,
-                                        ),
-                                      ),
-                                    ),
-
-                                    const SizedBox(width: 12),
-
-                                    // Completed status
-                                    Container(
-                                      height: 24,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF279541),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'Completed',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.white,
-                                          height: 1.21,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 7),
-
-                                // Submitted date
-                                const Text(
-                                  'Submitted: January 10, 2025 at 2:30 PM',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF525252),
-                                    height: 1.21,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 7),
-
-                                // Appointment date
-                                const Text(
-                                  'Appointment: January 15, 2025 at 10:00 AM',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF525252),
-                                    height: 1.21,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const Spacer(),
                       ],
                     ),
                   ),
@@ -522,7 +400,7 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'Past Bookings');
                 },
               );
             },
@@ -537,5 +415,231 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Color(0xFF737373)),
+          const SizedBox(height: 16),
+          Text(
+            'Error Loading Past Bookings',
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF171717),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF737373),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _fetchPastBookings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF5B00),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Retry',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.calendar_today_outlined,
+            size: 64,
+            color: Color(0xFF737373),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Past Bookings',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF171717),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'You don\'t have any completed appointments yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF737373),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppointmentsList() {
+    return RefreshIndicator(
+      onRefresh: _fetchPastBookings,
+      color: const Color(0xFFFF5B00),
+      child: ListView.builder(
+        itemCount: _appointments.length,
+        itemBuilder: (context, index) {
+          final appointment = _appointments[index];
+          return _buildAppointmentCard(appointment);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE5E5E5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(17),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title and Status
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    appointment.serviceName,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF171717),
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  height: 24,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(appointment.status),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    appointment.status,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      height: 1.21,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+
+            // Reference Number
+            Text(
+              'Reference: ${appointment.referenceNumber}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 7),
+
+            // Submitted date
+            Text(
+              'Submitted: ${appointment.formattedCreatedDateTime}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 7),
+
+            // Appointment date
+            Text(
+              'Appointment: ${appointment.formattedAppointmentDateTime}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 7),
+
+            // Address
+            Text(
+              'Address: ${appointment.address}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return const Color(0xFF279541);
+      case 'pending':
+        return const Color(0xFFFF5B00);
+      case 'cancelled':
+        return const Color(0xFFE53E3E);
+      default:
+        return const Color(0xFF737373);
+    }
   }
 }

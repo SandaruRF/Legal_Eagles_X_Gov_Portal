@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/chatbot_overlay.dart';
+import '../../core/services/knowledge_base_service.dart';
 
 class ChatInterfaceScreen extends StatefulWidget {
   final String? initialMessage;
@@ -13,156 +13,110 @@ class ChatInterfaceScreen extends StatefulWidget {
 class _ChatInterfaceScreenState extends State<ChatInterfaceScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final KnowledgeBaseService _knowledgeBaseService = KnowledgeBaseService();
 
   List<ChatMessage> messages = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
-      messages.add(
-        ChatMessage(
-          text: widget.initialMessage!,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ),
-      );
+      // Add user's search query
+      String userQuery = widget.initialMessage!;
 
-      // Simulate chatbot response
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        _addBotResponse(widget.initialMessage!);
-      });
+      // If the initial message contains formatted results, extract the original query
+      if (userQuery.startsWith("Based on your search for '")) {
+        final queryMatch = RegExp(
+          r"Based on your search for '([^']+)'",
+        ).firstMatch(userQuery);
+        if (queryMatch != null) {
+          final originalQuery = queryMatch.group(1) ?? userQuery;
+          messages.add(
+            ChatMessage(
+              text: originalQuery,
+              isUser: true,
+              timestamp: DateTime.now(),
+            ),
+          );
+
+          // Add bot response with search results
+          messages.add(
+            ChatMessage(
+              text: userQuery,
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
+        } else {
+          messages.add(
+            ChatMessage(
+              text: userQuery,
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
+        }
+      } else {
+        messages.add(
+          ChatMessage(text: userQuery, isUser: true, timestamp: DateTime.now()),
+        );
+
+        // Get response from knowledge base API
+        _getKnowledgeBaseResponse(userQuery);
+      }
     }
   }
 
-  void _addBotResponse(String userMessage) {
-    String botResponse = _generateBotResponse(userMessage);
-
+  Future<void> _getKnowledgeBaseResponse(String userMessage) async {
     setState(() {
-      messages.add(
-        ChatMessage(
-          text: botResponse,
-          isUser: false,
-          timestamp: DateTime.now(),
-        ),
-      );
+      _isLoading = true;
     });
 
-    _scrollToBottom();
-  }
+    try {
+      final response = await _knowledgeBaseService.searchKnowledgeBase(
+        text: userMessage,
+        limit: 5,
+      );
 
-  String _generateBotResponse(String userMessage) {
-    String lowerMessage = userMessage.toLowerCase();
+      String botResponse;
+      if (response.success &&
+          response.data != null &&
+          response.data!.isNotEmpty) {
+        // Use the content directly from the first result (which contains the formatted response)
+        botResponse = response.data!.first.content;
+      } else {
+        // Fallback response
+        botResponse =
+            "I'm sorry, I couldn't find specific information about that. However, I'm here to help with government services in Sri Lanka. You can ask me about:\n\n• Passport applications\n• Birth certificates\n• Driving licenses\n• Visa processes\n• Other government services\n\nPlease feel free to ask about any specific service you need help with.";
+      }
 
-    // Passport application response
-    if (lowerMessage.contains('passport')) {
-      return """**Passport Application Process in Sri Lanka**
+      setState(() {
+        messages.add(
+          ChatMessage(
+            text: botResponse,
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+        _isLoading = false;
+      });
 
-To apply for a new passport in Sri Lanka, follow these steps:
-
-**Required Documents:**
-• Completed passport application form
-• Original birth certificate
-• National Identity Card (NIC)
-• Two recent passport-size photographs
-• Previous passport (if renewing)
-
-**Application Process:**
-1. **Online Application**: Visit the Department of Immigration & Emigration website
-2. **Document Submission**: Submit required documents at any regional passport office
-3. **Biometric Data**: Provide fingerprints and digital photograph
-4. **Payment**: Pay the applicable fees (varies by passport type)
-5. **Collection**: Collect your passport after processing (7-10 working days)
-
-**Fees:**
-• Standard passport: Rs. 3,500
-• Express service: Rs. 7,500
-
-Would you like information about specific passport offices or online application procedures?""";
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        messages.add(
+          ChatMessage(
+            text:
+                "I'm experiencing some technical difficulties right now. Please try again in a moment, or feel free to ask about government services like passport applications, driving licenses, or birth certificates.",
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+        _isLoading = false;
+      });
+      _scrollToBottom();
     }
-
-    // Birth certificate response
-    if (lowerMessage.contains('birth certificate')) {
-      return """**Birth Certificate Application Requirements**
-
-To obtain a birth certificate in Sri Lanka, you need:
-
-**Required Documents:**
-• Completed application form (available at Registrar General's Department)
-• Original hospital discharge summary or midwife certificate
-• Parents' National Identity Cards
-• Marriage certificate of parents (if applicable)
-• Two witnesses with NIC copies
-
-**Application Process:**
-1. **Visit Registrar's Office**: Go to the divisional registrar where birth occurred
-2. **Submit Application**: Complete form with required documents
-3. **Verification**: Officers verify the submitted documents
-4. **Payment**: Pay the prescribed fees
-5. **Collection**: Certificate issued immediately or within 1-2 days
-
-**Fees:**
-• Birth certificate: Rs. 100
-• Certified copy: Rs. 25
-
-**Online Services:**
-You can also apply online through the Registrar General's Department website for faster processing.
-
-Need help with a specific situation or location?""";
-    }
-
-    // Driving license response
-    if (lowerMessage.contains('driving license')) {
-      return """**Driving License Renewal - Online Process**
-
-You can renew your Sri Lankan driving license online through the Department of Motor Traffic (DMT):
-
-**Online Renewal Requirements:**
-• Valid NIC or passport
-• Current driving license number
-• Medical certificate (if over 55 years)
-• Recent passport-size photograph
-• Payment method (credit/debit card or bank transfer)
-
-**Step-by-Step Process:**
-1. **Visit DMT Website**: Go to www.transport.gov.lk
-2. **Create Account**: Register with your NIC details
-3. **Upload Documents**: Submit required documents digitally
-4. **Medical Test**: Schedule or upload medical certificate
-5. **Payment**: Pay renewal fees online
-6. **Home Delivery**: New license delivered to your address
-
-**Renewal Fees:**
-• Motor car license: Rs. 2,000
-• Motorcycle license: Rs. 1,000
-• Heavy vehicle license: Rs. 3,000
-
-**Processing Time:**
-• Online: 3-5 working days
-• Home delivery: Additional 2-3 days
-
-You can also visit any DMT office for in-person renewal. Would you like details about DMT office locations?""";
-    }
-
-    // Visa processing response (existing)
-    if (lowerMessage.contains('visa') || lowerMessage.contains('form')) {
-      return """**Sri Lankan Visa Application Forms**
-
-Sri Lanka offers several types of visas, each with its own set of application forms depending on the purpose and duration of stay.
-
-**1. Visit Visa**
-Sri Lanka provides visit visa forms for tourists, business travelers, and short-term visitors. These can be applied for using the Tourist Visa, Business Visa, or Short-Term Visit Visa forms via the ETA system or embassies.
-
-**2. Residence Visas**
-Residence visa forms are used for long-term stays such as family reunification, religious work, or NGO involvement. Applicants may also need visa extension forms or ministry recommendation letters depending on their purpose.
-
-**3. Student & Work Visas**
-Students and foreign employees must use the Student Visa or Employment Visa forms, often requiring sponsorship or institutional support. Special forms also exist for internships and research-based visits.
-
-If you need to access a form mention the name or to access Immigration and Emigration related reports click the below button.""";
-    }
-
-    return "Thank you for your question. How can I assist you with government services today?";
   }
 
   void _sendMessage() {
@@ -183,10 +137,8 @@ If you need to access a form mention the name or to access Immigration and Emigr
 
     _scrollToBottom();
 
-    // Simulate bot response delay
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      _addBotResponse(userMessage);
-    });
+    // Get response from knowledge base API
+    _getKnowledgeBaseResponse(userMessage);
   }
 
   void _scrollToBottom() {
@@ -298,16 +250,68 @@ If you need to access a form mention the name or to access Immigration and Emigr
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount:
-                  messages.length +
-                  (messages.isNotEmpty ? 1 : 0), // +1 for additional sections
+              itemCount: messages.length + (_isLoading ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index < messages.length) {
-                  return _buildMessageBubble(messages[index]);
-                } else {
-                  // Additional sections (buttons, feedback, etc.)
-                  return _buildAdditionalSections();
+                if (index == messages.length && _isLoading) {
+                  // Show loading indicator
+                  return Container(
+                    margin: const EdgeInsets.only(top: 8, bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF809FB8),
+                          ),
+                          child: const Icon(
+                            Icons.support_agent,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF809FB8),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Typing...',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
+                return _buildMessageBubble(messages[index]);
               },
             ),
           ),
@@ -379,52 +383,6 @@ If you need to access a form mention the name or to access Immigration and Emigr
           _buildBottomNavigation(),
         ],
       ),
-
-      // Floating Action Button
-      floatingActionButton: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: const Color(0xFF262626),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 6,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(24),
-            onTap: () {
-              showDialog(
-                context: context,
-                barrierDismissible: true,
-                barrierColor: Colors.transparent,
-                builder: (BuildContext context) {
-                  return const ChatbotOverlay();
-                },
-              );
-            },
-            child: const Center(
-              child: Icon(
-                Icons.chat_bubble_outline,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -508,18 +466,7 @@ If you need to access a form mention the name or to access Immigration and Emigr
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message.text,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF1F2937),
-                        height: 1.64,
-                      ),
-                    ),
-                  ],
+                  children: [_buildFormattedText(message.text)],
                 ),
               ),
             ],
@@ -529,266 +476,99 @@ If you need to access a form mention the name or to access Immigration and Emigr
     );
   }
 
-  Widget _buildAdditionalSections() {
-    if (messages.isEmpty || !messages.any((m) => !m.isUser)) {
-      return const SizedBox.shrink();
-    }
+  Widget _buildFormattedText(String text) {
+    // Split text by \n for line breaks
+    final lines = text.split('\\n');
 
     return Column(
-      children: [
-        // Action buttons section
-        Container(
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              // Feedback section
-              const Text(
-                'Was this response helpful?',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF374151),
-                ),
-              ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children:
+          lines.map((line) {
+            if (line.trim().isEmpty) {
+              // Empty line - add spacing
+              return const SizedBox(height: 8);
+            }
 
-              const SizedBox(height: 16),
-
-              // Yes/No buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildFeedbackButton('Yes', true),
-                  const SizedBox(width: 12),
-                  _buildFeedbackButton('No', false),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Helpful count
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.thumb_up,
-                    size: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '180 users found this helpful',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF6B7280),
-                      height: 1.43,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // Quick action buttons
-        _buildQuickActionButtons(),
-
-        const SizedBox(height: 24),
-
-        // Immigration department button
-        _buildImmigrationDepartmentButton(),
-
-        const SizedBox(height: 24),
-
-        // People also ask section
-        _buildPeopleAlsoAskSection(),
-
-        const SizedBox(height: 100), // Space for bottom navigation
-      ],
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: _buildFormattedLine(line),
+            );
+          }).toList(),
     );
   }
 
-  Widget _buildFeedbackButton(String text, bool isPositive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isPositive ? Icons.thumb_up : Icons.thumb_down,
-            size: 14,
-            color:
-                isPositive ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
+  Widget _buildFormattedLine(String line) {
+    final List<TextSpan> spans = [];
+    final RegExp boldPattern = RegExp(r'\*\*(.*?)\*\*');
+
+    int lastIndex = 0;
+    for (final match in boldPattern.allMatches(line)) {
+      // Add normal text before bold text
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(
+            text: line.substring(lastIndex, match.start),
             style: const TextStyle(
               fontFamily: 'Poppins',
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF4B5563),
+              color: Color(0xFF1F2937),
+              height: 1.64,
             ),
           ),
-        ],
-      ),
-    );
-  }
+        );
+      }
 
-  Widget _buildQuickActionButtons() {
-    final buttons = [
-      'Tourist Visa Form',
-      'Business Visa Form',
-      'Visa Extension Form',
-      'More',
-    ];
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children:
-          buttons
-              .map(
-                (text) => Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF5B00),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    text,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      height: 1.55,
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-    );
-  }
-
-  Widget _buildImmigrationDepartmentButton() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF5B00),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Immigration and\nEmigration Department',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                height: 1.55,
-              ),
-            ),
-          ),
-          Text(
-            '→',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 0.71,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPeopleAlsoAskSection() {
-    final questions = [
-      'How can I apply for a Sri Lankan visa online?',
-      'What documents are required for a residence visa in Sri Lanka?',
-      'What are the latest mobile app trends?',
-      'How to test mobile apps effectively?',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'People also ask',
-          style: TextStyle(
+      // Add bold text
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: const TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Color(0xFF1F2937),
-            height: 1.56,
+            height: 1.64,
           ),
         ),
+      );
 
-        const SizedBox(height: 16),
+      lastIndex = match.end;
+    }
 
-        ...questions
-            .map(
-              (question) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        question,
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1F2937),
-                          height: 1.43,
-                        ),
-                      ),
-                    ),
-                    const Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 12,
-                      color: Color(0xFF9CA3AF),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            ,
-      ],
-    );
+    // Add remaining normal text
+    if (lastIndex < line.length) {
+      spans.add(
+        TextSpan(
+          text: line.substring(lastIndex),
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF1F2937),
+            height: 1.64,
+          ),
+        ),
+      );
+    }
+
+    // If no bold text found, return simple text
+    if (spans.isEmpty) {
+      spans.add(
+        TextSpan(
+          text: line,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF1F2937),
+            height: 1.64,
+          ),
+        ),
+      );
+    }
+
+    return RichText(text: TextSpan(children: spans));
   }
 
   Widget _buildBottomNavigation() {
@@ -816,7 +596,7 @@ If you need to access a form mention the name or to access Immigration and Emigr
             icon: Icons.search,
             label: 'Search',
             isSelected: false,
-            onTap: () {},
+            onTap: () => Navigator.pop(context),
           ),
           _buildNavItem(
             icon: Icons.notifications,

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/services/knowledge_base_service.dart';
+import '../../widgets/bottom_navigation_bar.dart';
+import '../chat/chat_interface_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -10,7 +13,10 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final KnowledgeBaseService _knowledgeBaseService = KnowledgeBaseService();
+
   List<SearchResult> _searchResults = [];
+  List<KnowledgeBaseResult> _knowledgeBaseResults = [];
   bool _isSearching = false;
 
   @override
@@ -26,10 +32,11 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _performSearch(String query) {
+  void _performSearch(String query) async {
     if (query.trim().isEmpty) {
       setState(() {
         _searchResults = [];
+        _knowledgeBaseResults = [];
         _isSearching = false;
       });
       return;
@@ -39,22 +46,74 @@ class _SearchScreenState extends State<SearchScreen> {
       _isSearching = true;
     });
 
-    // Simulate search delay
-    Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      // Search knowledge base
+      final knowledgeResponse = await _knowledgeBaseService.searchKnowledgeBase(
+        text: query,
+        limit: 5,
+      );
+
       if (mounted) {
         setState(() {
+          if (knowledgeResponse.success && knowledgeResponse.data != null) {
+            _knowledgeBaseResults = knowledgeResponse.data!;
+          } else {
+            _knowledgeBaseResults = [];
+          }
+          // Also search local services for fallback
           _searchResults = _getSearchResults(query);
           _isSearching = false;
         });
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _knowledgeBaseResults = [];
+          _searchResults = _getSearchResults(query);
+          _isSearching = false;
+        });
+      }
+    }
   }
 
-  void _navigateToChat(String query) {
+  void _navigateToChat(String query) async {
     if (query.trim().isEmpty) return;
 
-    // Navigate to chat interface with the search query
-    Navigator.pushNamed(context, '/chat_interface', arguments: query.trim());
+    // Search knowledge base before navigating to chat
+    final knowledgeResponse = await _knowledgeBaseService.searchKnowledgeBase(
+      text: query,
+      limit: 5,
+    );
+
+    String chatMessage = query.trim();
+
+    // If we have knowledge base results, format them for the chat
+    if (knowledgeResponse.success &&
+        knowledgeResponse.data != null &&
+        knowledgeResponse.data!.isNotEmpty) {
+      String formattedResults =
+          "Based on your search for '$query', here's what I found:\n\n";
+
+      for (int i = 0; i < knowledgeResponse.data!.length; i++) {
+        final result = knowledgeResponse.data![i];
+        formattedResults += "**${i + 1}. ${result.title}**\n";
+        formattedResults += "${result.content}\n";
+        if (result.category != null) {
+          formattedResults += "*Category: ${result.category}*\n";
+        }
+        formattedResults += "\n";
+      }
+
+      chatMessage = formattedResults;
+    }
+
+    // Navigate to chat interface
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatInterfaceScreen(initialMessage: chatMessage),
+      ),
+    );
   }
 
   List<SearchResult> _getSearchResults(String query) {
@@ -248,6 +307,9 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(child: _buildSearchResults()),
         ],
       ),
+      bottomNavigationBar: const CustomBottomNavigationBar(
+        currentPage: 'search',
+      ),
     );
   }
 
@@ -262,16 +324,48 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    if (_searchResults.isEmpty) {
+    if (_knowledgeBaseResults.isEmpty && _searchResults.isEmpty) {
       return _buildNoResults();
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _searchResults.length,
+      itemCount:
+          _knowledgeBaseResults.length +
+          _searchResults.length +
+          (_knowledgeBaseResults.isNotEmpty ? 1 : 0) +
+          (_searchResults.isNotEmpty ? 1 : 0),
       itemBuilder: (context, index) {
-        final result = _searchResults[index];
-        return _buildSearchResultCard(result);
+        int currentIndex = 0;
+
+        // Knowledge base results section
+        if (_knowledgeBaseResults.isNotEmpty) {
+          if (index == currentIndex) {
+            return _buildSectionHeader('Knowledge Base Results');
+          }
+          currentIndex++;
+
+          if (index < currentIndex + _knowledgeBaseResults.length) {
+            final result = _knowledgeBaseResults[index - currentIndex];
+            return _buildKnowledgeBaseResultCard(result);
+          }
+          currentIndex += _knowledgeBaseResults.length;
+        }
+
+        // Local services section
+        if (_searchResults.isNotEmpty) {
+          if (index == currentIndex) {
+            return _buildSectionHeader('Government Services');
+          }
+          currentIndex++;
+
+          if (index < currentIndex + _searchResults.length) {
+            final result = _searchResults[index - currentIndex];
+            return _buildSearchResultCard(result);
+          }
+        }
+
+        return const SizedBox.shrink();
       },
     );
   }
@@ -550,6 +644,170 @@ class _SearchScreenState extends State<SearchScreen> {
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFF525252),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF171717),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKnowledgeBaseResultCard(KnowledgeBaseResult result) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE5E5E5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF5B00),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  result.title,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF171717),
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            result.content,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF525252),
+              height: 1.43,
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (result.category != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    result.category!,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF525252),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (result.score != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F7FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${(result.score! * 100).toStringAsFixed(0)}% match',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1890FF),
+                    ),
+                  ),
+                ),
+              ],
+              const Spacer(),
+              // Chat button
+              GestureDetector(
+                onTap:
+                    () =>
+                        _navigateToChat('Tell me more about: ${result.title}'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF5B00),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Ask',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
                         ),
                       ),
                     ],

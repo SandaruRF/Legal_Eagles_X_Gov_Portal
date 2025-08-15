@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import '../../../widgets/bottom_navigation_bar.dart';
 
 class ProfilePhotoCompletionScreen extends StatelessWidget {
   final File? selectedImage;
@@ -174,18 +175,8 @@ class ProfilePhotoCompletionScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 88,
-        decoration: const BoxDecoration(color: Color(0xFFF2F2F2)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildBottomNavItem(Icons.home, 'Home', false),
-            _buildBottomNavItem(Icons.search, 'Search', false),
-            _buildBottomNavItem(Icons.notifications, 'Notification', false),
-            _buildBottomNavItem(Icons.settings, 'Settings', true),
-          ],
-        ),
+      bottomNavigationBar: const CustomBottomNavigationBar(
+        currentPage: 'settings',
       ),
     );
   }
@@ -273,24 +264,6 @@ class ProfilePhotoCompletionScreen extends StatelessWidget {
               if (isEditable)
                 const Icon(Icons.edit, color: Color(0xFFFF5B00), size: 16),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavItem(IconData icon, String label, bool isSelected) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: const Color(0xFF809FB8), size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF85A3BB),
           ),
         ),
       ],

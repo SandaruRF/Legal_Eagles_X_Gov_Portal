@@ -1,7 +1,7 @@
 enum Environment { development, staging, production, mockMode }
 
 class EnvironmentConfig {
-  // Switch back to staging to test IP fallback
+  // Switch to staging to use Hugging Face backend
   static const Environment _currentEnvironment = Environment.staging;
 
   static Environment get currentEnvironment => _currentEnvironment;
@@ -15,13 +15,9 @@ class EnvironmentConfig {
     Environment.mockMode: 'https://mock-server.local', // Mock mode for testing
   };
 
-  // Fallback URLs for network issues
+  // Fallback URLs for network issues - simplified for Hugging Face
   static const Map<Environment, List<String>> _fallbackUrls = {
-    Environment.staging: [
-      'https://anuhasip-gov-portal-backend.hf.space',
-      'https://54.211.9.90', // Direct IP address fallback
-      'http://54.211.9.90', // HTTP fallback if HTTPS fails
-    ],
+    Environment.staging: ['https://anuhasip-gov-portal-backend.hf.space'],
     Environment.mockMode: [], // No fallbacks in mock mode
   };
 
@@ -42,10 +38,18 @@ class EnvironmentConfig {
   // Endpoints
   static const String citizensRegister = '$apiVersion/citizens/register';
   static const String citizensLogin = '$apiVersion/citizens/login';
+  static const String citizensMe = '$apiVersion/citizens/me';
 
   // KYC Endpoints
   static const String kycUploadNicFront =
       '$apiVersion/citizen/kyc/upload-nic-front';
+  static const String kycUploadNicBack =
+      '$apiVersion/citizen/kyc/upload-nic-back';
+  static const String kycUploadSelfie = '$apiVersion/citizen/kyc/upload-selfie';
+
+  // Vault Endpoints
+  static const String vaultDocuments = '$apiVersion/citizen/vault/documents';
+  static const String vaultUpload = '$apiVersion/citizen/vault/upload';
 
   // Headers
   static const Map<String, String> headers = {
@@ -53,9 +57,9 @@ class EnvironmentConfig {
     'Accept': 'application/json',
   };
 
-  // Timeouts
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  // Timeouts - increased for Hugging Face backend
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   // Debug settings
   static bool get enableApiLogs => isDevelopment || isStaging;

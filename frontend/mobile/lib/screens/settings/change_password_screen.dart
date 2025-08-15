@@ -425,7 +425,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'Change Password');
                 },
               );
             },

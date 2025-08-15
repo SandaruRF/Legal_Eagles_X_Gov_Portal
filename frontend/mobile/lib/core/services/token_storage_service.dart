@@ -4,6 +4,7 @@ class TokenStorageService {
   static const String _tokenKey = 'auth_token';
   static const String _tokenTypeKey = 'token_type';
   static const String _userIdKey = 'user_id';
+  static const String _citizenIdKey = 'citizen_id';
 
   // Save authentication token
   static Future<void> saveToken(String token, String tokenType) async {
@@ -47,6 +48,7 @@ class TokenStorageService {
     await prefs.remove(_tokenKey);
     await prefs.remove(_tokenTypeKey);
     await prefs.remove(_userIdKey);
+    await prefs.remove(_citizenIdKey);
   }
 
   // Save user ID
@@ -59,6 +61,18 @@ class TokenStorageService {
   static Future<String?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userIdKey);
+  }
+
+  // Save citizen ID
+  static Future<void> saveCitizenId(String citizenId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_citizenIdKey, citizenId);
+  }
+
+  // Get citizen ID
+  static Future<String?> getCitizenId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_citizenIdKey);
   }
 
   // Clear all stored data

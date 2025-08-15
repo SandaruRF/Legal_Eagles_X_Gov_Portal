@@ -66,7 +66,8 @@ class AuthService {
         ApiConfig.citizensLogin,
         body: loginRequest.toJson(),
         fromJson: (data) => LoginResponse.fromJson(data),
-        useFormEncoding: true, // Use form encoding for login
+        useFormEncoding:
+            true, // Try form encoding as backend might expect form data
       );
 
       // If login successful, store auth token
@@ -86,7 +87,7 @@ class AuthService {
   Future<ApiResponse<User>> getUserProfile() async {
     try {
       final response = await _httpClient.get<User>(
-        '/api/citizens/profile',
+        ApiConfig.citizensMe,
         fromJson: (data) => User.fromJson(data),
       );
 
@@ -216,6 +217,22 @@ class AuthService {
     } catch (e) {
       return ApiResponse<Map<String, dynamic>>.error(
         message: 'Failed to delete account: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Validate the current user token by calling the /me endpoint
+  Future<ApiResponse<User>> validateCurrentUser() async {
+    try {
+      final response = await _httpClient.get<User>(
+        ApiConfig.citizensMe,
+        fromJson: (data) => User.fromJson(data as Map<String, dynamic>),
+      );
+
+      return response;
+    } catch (e) {
+      return ApiResponse<User>.error(
+        message: 'Failed to validate user token: ${e.toString()}',
       );
     }
   }

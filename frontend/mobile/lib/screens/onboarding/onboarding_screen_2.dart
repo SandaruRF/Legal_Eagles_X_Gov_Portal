@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/navigation_provider.dart';
-import '../../widgets/navigation_debug_widget.dart';
 
 class OnboardingScreen2 extends ConsumerWidget {
   const OnboardingScreen2({super.key});
@@ -10,7 +9,6 @@ class OnboardingScreen2 extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: const Color(0xFFE4E4E4),
@@ -18,9 +16,6 @@ class OnboardingScreen2 extends ConsumerWidget {
       extendBody: true,
       body: Stack(
         children: [
-          // Debug widget
-          const NavigationDebugWidget(),
-
           // Background rectangle with gradient border radius
           Positioned(
             left: 0,
@@ -69,6 +64,7 @@ class OnboardingScreen2 extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top section with Skip all button
+                  SizedBox(height: screenHeight * 0.01), // Small top spacing
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -82,17 +78,18 @@ class OnboardingScreen2 extends ConsumerWidget {
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w400,
-                            fontSize:
-                                screenWidth * 0.036, // Responsive font size
+                            fontSize: 16, // Fixed larger font size
                             color: const Color(0xFF8C1F28),
                             height: 1.43,
+                            decoration: TextDecoration.underline, // Underline
+                            decorationColor: const Color(0xFF8C1F28),
                           ),
                         ),
                       ),
                     ],
                   ),
 
-                  SizedBox(height: screenHeight * 0.08), // Responsive spacing
+                  SizedBox(height: screenHeight * 0.02), // Much smaller spacing
                   // Progress indicators
                   Center(
                     child: Row(
@@ -129,102 +126,105 @@ class OnboardingScreen2 extends ConsumerWidget {
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.05), // Responsive spacing
+                  SizedBox(
+                    height: screenHeight * 0.04,
+                  ), // Reduced spacing for higher positioning
                   // Main title
                   Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.03,
+                      horizontal: screenWidth * 0.08, // Wider padding
                     ),
                     child: Text(
                       'Meet Our Guide',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w800,
-                        fontSize: screenWidth * 0.08, // Responsive font size
+                        fontSize: 36, // Fixed larger font size for beauty
                         color: const Color(0xFF000000),
-                        height: 1.21,
+                        height: 1.2,
+                        letterSpacing: 0.5, // Better letter spacing
                       ),
-                    ),
-                  ),
-
-                  // Flexible spacer to push navigation buttons to bottom
-                  const Spacer(),
-
-                  // Navigation buttons at bottom
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: bottomPadding + (screenHeight * 0.03),
-                      left: screenWidth * 0.02,
-                      right: screenWidth * 0.02,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Left arrow button
-                        GestureDetector(
-                          onTap: () {
-                            // Handle back navigation using Riverpod
-                            ref
-                                .read(navigationProvider.notifier)
-                                .previousPage();
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            width: screenWidth * 0.15,
-                            height: screenWidth * 0.15,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFF5B00),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color.fromRGBO(0, 0, 0, 0.25),
-                                  offset: Offset(0, 4),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.white,
-                              size: screenWidth * 0.04,
-                            ),
-                          ),
-                        ),
-
-                        // Right arrow button
-                        GestureDetector(
-                          onTap: () {
-                            // Handle forward navigation using Riverpod
-                            ref.read(navigationProvider.notifier).nextPage();
-                            // Navigate to the third onboarding page
-                            Navigator.pushNamed(context, '/onboarding3');
-                          },
-                          child: Container(
-                            width: screenWidth * 0.15,
-                            height: screenWidth * 0.15,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFF5B00),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color.fromRGBO(0, 0, 0, 0.25),
-                                  offset: Offset(0, 4),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: screenWidth * 0.04,
-                            ),
-                          ),
-                        ),
-                      ],
+                      textAlign: TextAlign.center, // Center align for beauty
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+
+          // Navigation buttons positioned at vertical center
+          Positioned(
+            left: screenWidth * 0.05,
+            right: screenWidth * 0.05,
+            top:
+                screenHeight * 0.5 -
+                30, // Center vertically (half screen height minus half button height)
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left arrow button
+                GestureDetector(
+                  onTap: () {
+                    // Handle back navigation using Riverpod
+                    ref.read(navigationProvider.notifier).previousPage();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5B00),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.25),
+                          offset: Offset(0, 4),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Right arrow button
+                GestureDetector(
+                  onTap: () {
+                    // Handle forward navigation using Riverpod
+                    ref.read(navigationProvider.notifier).nextPage();
+                    // Navigate to the third onboarding page
+                    Navigator.pushNamed(context, '/onboarding3');
+                  },
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5B00),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.25),
+                          offset: Offset(0, 4),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/navigation_provider.dart';
-import '../../widgets/navigation_debug_widget.dart';
 
 class OnboardingScreen5 extends ConsumerWidget {
   const OnboardingScreen5({super.key});
@@ -10,7 +9,6 @@ class OnboardingScreen5 extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFDFDFD),
@@ -18,9 +16,6 @@ class OnboardingScreen5 extends ConsumerWidget {
       extendBody: true,
       body: Stack(
         children: [
-          // Debug widget
-          const NavigationDebugWidget(),
-
           // Background illustration image
           Positioned(
             left: -screenWidth * 0.165,
@@ -47,7 +42,7 @@ class OnboardingScreen5 extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Progress indicators at the top
-                  SizedBox(height: screenHeight * 0.125),
+                  SizedBox(height: screenHeight * 0.03), // Much smaller spacing
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -120,7 +115,9 @@ class OnboardingScreen5 extends ConsumerWidget {
                   ),
 
                   // Skip all button
-                  SizedBox(height: screenHeight * 0.02),
+                  SizedBox(
+                    height: screenHeight * 0.01,
+                  ), // Small spacing for consistent height
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
@@ -135,109 +132,119 @@ class OnboardingScreen5 extends ConsumerWidget {
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w400,
-                          fontSize: 14,
+                          fontSize: 16, // Fixed larger font size
                           color: const Color(0xFF8C1F28),
                           height: 1.43,
+                          decoration: TextDecoration.underline, // Underline
+                          decorationColor: const Color(0xFF8C1F28),
                         ),
                       ),
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.08),
-
+                  SizedBox(
+                    height: screenHeight * 0.05,
+                  ), // Reduced spacing for higher positioning
                   // Main title
                   Padding(
-                    padding: EdgeInsets.only(left: screenWidth * 0.058),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.08,
+                    ), // Wider padding
                     child: Text(
                       'Digital ID support',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w800,
-                        fontSize: 32,
+                        fontSize: 36, // Fixed larger font size
                         color: Colors.black,
-                        height: 1.21,
+                        height: 1.2,
+                        letterSpacing: 0.5, // Better letter spacing
                       ),
+                      textAlign: TextAlign.center, // Center align for beauty
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.02),
+                  SizedBox(height: screenHeight * 0.015),
 
                   // Subtitle
                   Padding(
-                    padding: EdgeInsets.only(left: screenWidth * 0.058),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.08,
+                    ), // Wider padding
                     child: Text(
                       'Mention about Digital documents',
                       style: TextStyle(
                         fontFamily: 'Lexend',
                         fontWeight: FontWeight.w400,
-                        fontSize: 24,
+                        fontSize: 20, // Fixed larger font size
                         color: Colors.black,
-                        height: 1.65,
+                        height: 1.4,
+                        letterSpacing: 0.3, // Better letter spacing
                       ),
-                    ),
-                  ),
-
-                  // Spacer to push navigation buttons to bottom
-                  const Spacer(),
-
-                  // Navigation arrows (left and right)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: bottomPadding + 20,
-                      left: screenWidth * 0.013,
-                      right: screenWidth * 0.013,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Left arrow button
-                        GestureDetector(
-                          onTap: () {
-                            ref
-                                .read(navigationProvider.notifier)
-                                .previousPage();
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFF5B00),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-
-                        // Right arrow button
-                        GestureDetector(
-                          onTap: () {
-                            ref.read(navigationProvider.notifier).nextPage();
-                            Navigator.pushNamed(context, '/onboarding6');
-                          },
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFF5B00),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
+                      textAlign: TextAlign.center, // Center align for beauty
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+
+          // Navigation buttons positioned at vertical center
+          Positioned(
+            left: screenWidth * 0.05,
+            right: screenWidth * 0.05,
+            top:
+                screenHeight * 0.5 -
+                30, // Center vertically (half screen height minus half button height)
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left arrow button
+                GestureDetector(
+                  onTap: () {
+                    ref.read(navigationProvider.notifier).previousPage();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5B00),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Right arrow button
+                GestureDetector(
+                  onTap: () {
+                    ref.read(navigationProvider.notifier).nextPage();
+                    Navigator.pushNamed(context, '/onboarding6');
+                  },
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5B00),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

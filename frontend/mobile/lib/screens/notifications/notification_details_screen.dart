@@ -196,7 +196,9 @@ class NotificationDetailsScreen extends StatelessWidget {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(
+                    currentPage: 'Notification Details',
+                  );
                 },
               );
             },

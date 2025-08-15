@@ -9,10 +9,50 @@ class LoginResponse {
   }
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    return LoginResponse(
-      accessToken: json['access_token'] ?? '',
-      tokenType: json['token_type'] ?? 'Bearer',
-    );
+    // Handle various possible field names for access token
+    String accessToken = '';
+    String tokenType = 'Bearer';
+
+    // Try different field names for access token
+    accessToken =
+        json['access_token']?.toString() ??
+        json['accessToken']?.toString() ??
+        json['token']?.toString() ??
+        json['authToken']?.toString() ??
+        '';
+
+    // Try different field names for token type
+    tokenType =
+        json['token_type']?.toString() ??
+        json['tokenType']?.toString() ??
+        json['type']?.toString() ??
+        'Bearer';
+
+    // If still no access token found, log the response for debugging
+    if (accessToken.isEmpty) {
+      print('LoginResponse: No access token found in response');
+      print('Available keys: ${json.keys.toList()}');
+      print('Full response: $json');
+
+      // Check if this is a wrapped response format
+      if (json['data'] is Map<String, dynamic>) {
+        print('Found data field, trying to parse from data...');
+        final dataMap = json['data'] as Map<String, dynamic>;
+        accessToken =
+            dataMap['access_token']?.toString() ??
+            dataMap['accessToken']?.toString() ??
+            dataMap['token']?.toString() ??
+            dataMap['authToken']?.toString() ??
+            '';
+        tokenType =
+            dataMap['token_type']?.toString() ??
+            dataMap['tokenType']?.toString() ??
+            dataMap['type']?.toString() ??
+            'Bearer';
+      }
+    }
+
+    return LoginResponse(accessToken: accessToken, tokenType: tokenType);
   }
 
   @override

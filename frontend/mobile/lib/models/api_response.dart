@@ -43,8 +43,18 @@ class ApiResponse<T> {
     Map<String, dynamic> json,
     T Function(dynamic)? fromJsonT,
   ) {
+    // Handle success field that might be string or boolean
+    bool successValue = false;
+    if (json['success'] != null) {
+      if (json['success'] is bool) {
+        successValue = json['success'];
+      } else if (json['success'] is String) {
+        successValue = json['success'].toString().toLowerCase() == 'true';
+      }
+    }
+
     return ApiResponse<T>(
-      success: json['success'] ?? false,
+      success: successValue,
       message: json['message'] ?? '',
       data:
           fromJsonT != null && json['data'] != null

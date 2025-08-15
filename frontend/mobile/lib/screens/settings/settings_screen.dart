@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
+import '../../core/services/token_storage_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,7 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.pushNamed(context, '/deactivate_account');
   }
 
-  void _handleLogout() {
+  void _handleLogout() async {
+    // Clear token on logout
+    await TokenStorageService.clearToken();
     Navigator.of(context).pop(); // Close dialog
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
@@ -117,7 +121,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // Bottom Navigation
-          _buildBottomNavigation(),
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: CustomBottomNavigationBar(currentPage: 'settings'),
+          ),
 
           // Floating Action Button for Chatbot
           _buildFloatingChatbotButton(),
@@ -351,80 +360,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        width: double.infinity, // Full width
-        height: 100, // Increased height from 85 to 100
-        decoration: const BoxDecoration(
-          color: Color(0xFFF2F2F2),
-          border: Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home, 'Home'),
-            _buildNavItem(Icons.search, 'Search'),
-            _buildNavItem(Icons.notifications, 'Notification'),
-            _buildNavItem(Icons.settings, 'Settings', isSelected: true),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, {bool isSelected = false}) {
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          switch (label) {
-            case 'Home':
-              Navigator.pop(context); // Go back to previous screen (home)
-              break;
-            case 'Search':
-              // For now, just show a message since route may not exist
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Search feature coming soon')),
-              );
-              break;
-            case 'Notification':
-              Navigator.pushNamed(context, '/notifications');
-              break;
-            case 'Settings':
-              // Already on settings page
-              break;
-          }
-        }
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color:
-                isSelected ? const Color(0xFFFF5B00) : const Color(0xFF85A3BB),
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color:
-                  isSelected
-                      ? const Color(0xFFFF5B00)
-                      : const Color(0xFF85A3BB),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFloatingChatbotButton() {
     return Positioned(
       bottom:
@@ -459,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'Settings');
                 },
               );
             },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../forms/dynamic_form_screen.dart';
 
 class MedicalAppointmentDocumentsScreen extends StatefulWidget {
   const MedicalAppointmentDocumentsScreen({super.key});
@@ -65,9 +66,15 @@ class _MedicalAppointmentDocumentsScreenState
                     // Continue Button
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(
+                        Navigator.push(
                           context,
-                          '/medical_appointment_booking',
+                          MaterialPageRoute(
+                            builder:
+                                (context) => const DynamicFormScreen(
+                                  formId: 'cmebvyrj20001mfmnlsapokcc',
+                                  formTitle: 'Medical Appointment Booking',
+                                ),
+                          ),
                         );
                       },
                       child: Container(

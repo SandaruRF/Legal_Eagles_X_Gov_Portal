@@ -100,18 +100,38 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           );
 
       if (response.success) {
-        // Registration successful
+        // Registration successful - now automatically log in the user
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Registration successful! Please proceed to KYC verification.',
-              ),
+              content: Text('Registration successful! Logging you in...'),
               backgroundColor: Colors.green,
             ),
           );
-          // Navigate to KYC verification
-          Navigator.pushNamed(context, '/kyc_verification');
+
+          // Automatically log in the user with the same credentials
+          final loginResponse = await ref
+              .read(authProvider.notifier)
+              .login(
+                username: _emailController.text,
+                password: _passwordController.text,
+              );
+
+          if (loginResponse.success && mounted) {
+            // Login successful, navigate to KYC verification
+            Navigator.pushNamed(context, '/kyc_verification');
+          } else if (mounted) {
+            // Login failed after registration - show error and redirect to login
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Registration successful! Please log in to continue.',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            Navigator.pushNamed(context, '/login');
+          }
         }
       } else {
         // Registration failed
