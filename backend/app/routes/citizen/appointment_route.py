@@ -70,7 +70,7 @@ async def book_appointment_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
 
 # Get User Appointments
-@router.get("/get-apointments")
+@router.get("/status/{status}")
 async def get_user_appointments_endpoint(
     status: str,
     current_user: citizen_schema.Citizen = Depends(get_current_user)
