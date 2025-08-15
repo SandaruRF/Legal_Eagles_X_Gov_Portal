@@ -12,7 +12,6 @@ import {
 } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
 import config from "../config/api";
-import departmentsData from "../data/departments.json";
 
 const AdminManagement = ({ departmentId }) => {
     const [admins, setAdmins] = useState([]);
@@ -229,9 +228,6 @@ const AdminManagement = ({ departmentId }) => {
         if (department && department.department_id === deptId) {
             return department.name;
         }
-        // Fallback to JSON data if API data not available yet
-        const dept = departmentsData.find((d) => d.department_id === deptId);
-        return dept ? dept.name : "Loading...";
     };
 
     if (user?.role !== "Head") {

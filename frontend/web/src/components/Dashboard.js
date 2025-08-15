@@ -8,6 +8,7 @@ import {
     MdPeople,
     MdMenu,
     MdClose,
+    MdDynamicForm
 } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
 import config from "../config/api";
@@ -15,6 +16,7 @@ import Overview from "./Overview";
 import Appointments from "./Appointments";
 import Analytics from "./Analytics";
 import Feedback from "./Feedback";
+import ServiceManagement from "./service_management/ServiceManagement";
 import AdminManagement from "./AdminManagement";
 import govPortalLogo from "../images/gov-portal-logo.png";
 
@@ -92,6 +94,8 @@ const Dashboard = () => {
                 return <Analytics departmentId={currentUser.department_id} />;
             case "feedback":
                 return <Feedback departmentId={currentUser.department_id} />;
+            case "service-management":
+                return <ServiceManagement departmentId={currentUser.department_id} />;
             case "admin-management":
                 return (
                     <AdminManagement departmentId={currentUser.department_id} />
@@ -187,6 +191,15 @@ const Dashboard = () => {
                     >
                         <MdFeedback style={{ marginRight: "0.5rem" }} />
                         Feedback
+                    </button>
+                    <button
+                        className={`nav-item ${
+                            activeTab === "service-management" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavClick("service-management")}
+                    >
+                        <MdDynamicForm style={{ marginRight: "0.5rem" }} />
+                        Service Management
                     </button>
 
                     {/* Admin Management - Only for Head role */}
