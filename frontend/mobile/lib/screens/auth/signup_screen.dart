@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/auth_provider.dart';
+import '../../core/utils/validation_helper.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -10,20 +12,24 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _nicController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  final bool _hasSubmitted = false; // Track if form has been submitted
+  bool _hasSubmitted = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
     super.initState();
     // Add listeners to controllers to trigger rebuilds when text changes
-    _fullNameController.addListener(() => setState(() {}));
+    _firstNameController.addListener(() => setState(() {}));
+    _lastNameController.addListener(() => setState(() {}));
     _nicController.addListener(() => setState(() {}));
     _phoneController.addListener(() => setState(() {}));
     _emailController.addListener(() => setState(() {}));
@@ -33,13 +39,102 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _nicController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRegistration() async {
+    setState(() {
+      _hasSubmitted = true;
+    });
+
+    // Clear any previous error
+    ref.read(authProvider.notifier).clearError();
+
+    // Validate all fields
+    final List<String?> validationResults = [
+      ValidationHelper.validateFirstName(_firstNameController.text),
+      ValidationHelper.validateLastName(_lastNameController.text),
+      ValidationHelper.validateNationalId(_nicController.text),
+      ValidationHelper.validatePhoneNumber(_phoneController.text),
+      ValidationHelper.validateEmail(_emailController.text),
+      ValidationHelper.validatePassword(_passwordController.text),
+      ValidationHelper.validateConfirmPassword(
+        _confirmPasswordController.text,
+        _passwordController.text,
+      ),
+    ];
+
+    if (!ValidationHelper.isFormValid(validationResults)) {
+      // Show validation error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ValidationHelper.getFirstError(validationResults) ??
+                'Please fix the errors above',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Attempt registration
+      final response = await ref
+          .read(authProvider.notifier)
+          .register(
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            email: _emailController.text.trim(),
+            phoneNumber: _phoneController.text.trim(),
+            nationalId: _nicController.text.trim(),
+            password: _passwordController.text,
+            confirmPassword: _confirmPasswordController.text,
+          );
+
+      if (response.success) {
+        // Registration successful
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Registration successful! Please proceed to KYC verification.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Navigate to KYC verification
+          Navigator.pushNamed(context, '/kyc_verification');
+        }
+      } else {
+        // Registration failed
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle any unexpected errors
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An unexpected error occurred: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -148,12 +243,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     children: [
                       const SizedBox(height: 16),
 
-                      // Full Name field
+                      // First Name field
                       _buildFormField(
-                        label: 'Full Name',
-                        hint: 'Enter your name',
-                        controller: _fullNameController,
+                        label: 'First Name',
+                        hint: 'Enter your first name',
+                        controller: _firstNameController,
                         showSkipAll: true,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Last Name field
+                      _buildFormField(
+                        label: 'Last Name',
+                        hint: 'Enter your last name',
+                        controller: _lastNameController,
                       ),
 
                       const SizedBox(height: 16),
@@ -161,7 +265,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       // NIC Number field
                       _buildFormField(
                         label: 'NIC Number',
-                        hint: 'Enter your phone NIC number',
+                        hint: 'Enter your NIC number',
                         controller: _nicController,
                       ),
 
@@ -179,7 +283,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       // Email field
                       _buildFormField(
                         label: 'Email',
-                        hint: 'Enter your phone email',
+                        hint: 'Enter your email',
                         controller: _emailController,
                       ),
 
@@ -191,6 +295,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         hint: 'Enter your password',
                         controller: _passwordController,
                         isPassword: true,
+                        isPasswordVisible: _isPasswordVisible,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
                       ),
 
                       const SizedBox(height: 16),
@@ -201,6 +311,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         hint: 'Confirm your password',
                         controller: _confirmPasswordController,
                         isPassword: true,
+                        isPasswordVisible: _isConfirmPasswordVisible,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible;
+                          });
+                        },
                       ),
 
                       const SizedBox(height: 24),
@@ -228,110 +345,45 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         width: double.infinity,
                         height: 48,
                         margin: const EdgeInsets.symmetric(horizontal: 12),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            print('Register button pressed!');
-                            // TEMPORARY: Skip validation for testing
-                            print(
-                              'Skipping validation - navigating directly to KYC',
-                            );
-                            Navigator.pushNamed(context, '/kyc_verification');
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final authState = ref.watch(authProvider);
+                            final isLoading = authState.isLoading;
 
-                            /* ORIGINAL VALIDATION CODE - UNCOMMENT TO RESTORE:
-                            setState(() {
-                              _hasSubmitted = true;
-                            });
-
-                            // Manual validation check
-                            bool isValid = true;
-
-                            // Check all fields for errors
-                            if (_hasError(
-                              'Full Name',
-                              _fullNameController.text,
-                            )) {
-                              print(
-                                'Full Name validation failed: "${_fullNameController.text}"',
-                              );
-                              isValid = false;
-                            }
-                            if (_hasError('NIC Number', _nicController.text)) {
-                              print(
-                                'NIC validation failed: "${_nicController.text}"',
-                              );
-                              isValid = false;
-                            }
-                            if (_hasError(
-                              'Phone Number',
-                              _phoneController.text,
-                            )) {
-                              print(
-                                'Phone validation failed: "${_phoneController.text}"',
-                              );
-                              isValid = false;
-                            }
-                            if (_hasError('Email', _emailController.text)) {
-                              print(
-                                'Email validation failed: "${_emailController.text}"',
-                              );
-                              isValid = false;
-                            }
-                            if (_hasError(
-                              'Password',
-                              _passwordController.text,
-                            )) {
-                              print(
-                                'Password validation failed: "${_passwordController.text}"',
-                              );
-                              isValid = false;
-                            }
-                            if (_hasError(
-                              'Confirm Password',
-                              _confirmPasswordController.text,
-                            )) {
-                              print(
-                                'Confirm Password validation failed: "${_confirmPasswordController.text}"',
-                              );
-                              isValid = false;
-                            }
-
-                            print('Form validation result: $isValid');
-                            if (isValid) {
-                              print(
-                                'Registration form submitted - navigating to KYC',
-                              );
-                              Navigator.pushNamed(context, '/kyc_verification');
-                            } else {
-                              print('Form validation failed - not navigating');
-                              // Show a message to user about filling required fields
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please fill in all required fields correctly',
-                                  ),
-                                  backgroundColor: Colors.red,
+                            return ElevatedButton(
+                              onPressed: isLoading ? null : _handleRegistration,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF5B00),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              );
-                            }
-                            */
+                                elevation: 0,
+                              ),
+                              child:
+                                  isLoading
+                                      ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Color(0xFFFCFAF7),
+                                              ),
+                                        ),
+                                      )
+                                      : const Text(
+                                        'Register',
+                                        style: TextStyle(
+                                          fontFamily: 'Lexend',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                          color: Color(0xFFFCFAF7),
+                                          height: 1.5,
+                                        ),
+                                      ),
+                            );
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF5B00),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Register',
-                            style: TextStyle(
-                              fontFamily: 'Lexend',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Color(0xFFFCFAF7),
-                              height: 1.5,
-                            ),
-                          ),
                         ),
                       ),
 
@@ -374,6 +426,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     required String hint,
     required TextEditingController controller,
     bool isPassword = false,
+    bool isPasswordVisible = false,
+    VoidCallback? onToggleVisibility,
     bool showSkipAll = false,
   }) {
     return Column(
@@ -438,7 +492,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 child: TextFormField(
                   controller: controller,
-                  obscureText: isPassword,
+                  obscureText: isPassword && !isPasswordVisible,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w400,
@@ -471,8 +525,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       fontSize: 0,
                       color: Colors.transparent,
                     ),
+                    suffixIcon:
+                        isPassword && onToggleVisibility != null
+                            ? IconButton(
+                              icon: Icon(
+                                isPasswordVisible
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: const Color(0xFFADAEBC),
+                                size: 20,
+                              ),
+                              onPressed: onToggleVisibility,
+                            )
+                            : null,
                   ),
-                  // Remove validator completely to prevent any built-in validation behavior
                 ),
               ),
               // Custom error message with consistent spacing
@@ -482,7 +548,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 padding: const EdgeInsets.only(top: 4, left: 4),
                 child: Builder(
                   builder: (context) {
-                    // Get error message for this field
+                    // Get error message for this field using proper validation
                     final errorMessage = _getErrorMessage(
                       label,
                       controller.text,
@@ -501,7 +567,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             fontWeight: FontWeight.w400,
                           ),
                         )
-                        : const SizedBox.shrink(); // Use shrink instead of empty SizedBox
+                        : const SizedBox.shrink();
                   },
                 ),
               ),
@@ -514,29 +580,31 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   // Helper method to check if a field has an error
   bool _hasError(String label, String value) {
-    if (value.isEmpty) {
-      return true;
-    }
-    if (label == 'Email' && !value.contains('@')) {
-      return true;
-    }
-    if (label == 'Confirm Password' && value != _passwordController.text) {
-      return true;
-    }
-    return false;
+    return _getErrorMessage(label, value) != null;
   }
 
-  // Helper method to get error message for a field
+  // Helper method to get error message for a field using ValidationHelper
   String? _getErrorMessage(String label, String value) {
-    if (value.isEmpty) {
-      return 'Please enter your ${label.toLowerCase()}';
+    switch (label) {
+      case 'First Name':
+        return ValidationHelper.validateFirstName(value);
+      case 'Last Name':
+        return ValidationHelper.validateLastName(value);
+      case 'NIC Number':
+        return ValidationHelper.validateNationalId(value);
+      case 'Phone Number':
+        return ValidationHelper.validatePhoneNumber(value);
+      case 'Email':
+        return ValidationHelper.validateEmail(value);
+      case 'Password':
+        return ValidationHelper.validatePassword(value);
+      case 'Confirm Password':
+        return ValidationHelper.validateConfirmPassword(
+          value,
+          _passwordController.text,
+        );
+      default:
+        return null;
     }
-    if (label == 'Email' && !value.contains('@')) {
-      return 'Please enter a valid email';
-    }
-    if (label == 'Confirm Password' && value != _passwordController.text) {
-      return 'Passwords do not match';
-    }
-    return null;
   }
 }

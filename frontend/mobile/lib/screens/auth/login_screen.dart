@@ -1,21 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/auth_provider.dart';
+import '../../core/utils/validation_helper.dart';
+import '../../core/services/token_storage_service.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _nicEmailController = TextEditingController();
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  bool _hasSubmitted = false;
+  bool _isPasswordVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to controllers to trigger rebuilds when text changes
+    _usernameController.addListener(() => setState(() {}));
+    _passwordController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
-    _nicEmailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    setState(() {
+      _hasSubmitted = true;
+    });
+
+    // Clear any previous error
+    ref.read(authProvider.notifier).clearError();
+
+    // Validate fields
+    final List<String?> validationResults = [
+      ValidationHelper.validateUsernameOrEmail(_usernameController.text),
+      ValidationHelper.validateRequired(_passwordController.text, 'Password'),
+    ];
+
+    if (!ValidationHelper.isFormValid(validationResults)) {
+      // Show validation error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ValidationHelper.getFirstError(validationResults) ??
+                'Please fix the errors above',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Attempt login
+      final response = await ref
+          .read(authProvider.notifier)
+          .login(
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
+          );
+
+      print('Login response success: ${response.success}');
+      print('Login response data: ${response.data}');
+      print('Login response message: ${response.message}');
+
+      if (response.success && response.data != null) {
+        print('Login successful, saving token...');
+
+        // Save token for persistence
+        await TokenStorageService.saveToken(
+          response.data!.accessToken,
+          response.data!.tokenType,
+        );
+
+        print('Token saved successfully, navigating to home...');
+
+        // Login successful - navigate to signed in home page
+        if (mounted) {
+          print('Widget is mounted, showing snackbar and navigating...');
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          // Clear the navigation stack and navigate to signed in home
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home_signed_in',
+            (route) => false, // Remove all previous routes
+          );
+
+          print('Navigation completed');
+        } else {
+          print('Widget is not mounted, cannot navigate');
+        }
+      } else {
+        // Login failed
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Login error occurred: $e');
+
+      // Handle any unexpected errors
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An unexpected error occurred: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -151,11 +267,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: const Color(0xFFD4D4D4),
+                                    color:
+                                        _hasSubmitted && _hasError('username')
+                                            ? Colors.red
+                                            : const Color(0xFFD4D4D4),
                                   ),
                                 ),
                                 child: TextField(
-                                  controller: _nicEmailController,
+                                  controller: _usernameController,
                                   decoration: const InputDecoration(
                                     hintText: 'Enter your NIC or Email',
                                     hintStyle: TextStyle(
@@ -172,9 +291,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
+                              // Error message
+                              if (_hasSubmitted && _hasError('username'))
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    left: 4,
+                                  ),
+                                  child: Text(
+                                    _getErrorMessage('username'),
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
-
                           const SizedBox(height: 17),
 
                           // Password field
@@ -199,31 +334,65 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: const Color(0xFFD4D4D4),
+                                    color:
+                                        _hasSubmitted && _hasError('password')
+                                            ? Colors.red
+                                            : const Color(0xFFD4D4D4),
                                   ),
                                 ),
                                 child: TextField(
                                   controller: _passwordController,
-                                  obscureText: true,
-                                  decoration: const InputDecoration(
+                                  obscureText: !_isPasswordVisible,
+                                  decoration: InputDecoration(
                                     hintText: 'Enter your password',
-                                    hintStyle: TextStyle(
+                                    hintStyle: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
                                       color: Color(0xFFADAEBC),
                                     ),
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
+                                    contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 12,
                                       vertical: 15,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _isPasswordVisible
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: const Color(0xFFADAEBC),
+                                        size: 20,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isPasswordVisible =
+                                              !_isPasswordVisible;
+                                        });
+                                      },
                                     ),
                                   ),
                                 ),
                               ),
+                              // Error message
+                              if (_hasSubmitted && _hasError('password'))
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    left: 4,
+                                  ),
+                                  child: Text(
+                                    _getErrorMessage('password'),
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
-
                           const SizedBox(height: 20),
 
                           // Forgot password link
@@ -258,46 +427,65 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 48,
                       margin: const EdgeInsets.symmetric(horizontal: 17),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // For testing, allow sign in without validation
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/home_signed_in',
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final authState = ref.watch(authProvider);
+                          final isLoading = authState.isLoading;
+
+                          return ElevatedButton(
+                            onPressed: isLoading ? null : _handleLogin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF5B00),
+                              foregroundColor: const Color(0xFFFCFAF7),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            child:
+                                isLoading
+                                    ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFFFCFAF7),
+                                            ),
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Sign In',
+                                      style: TextStyle(
+                                        fontFamily: 'Lexend',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.5,
+                                      ),
+                                    ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5B00),
-                          foregroundColor: const Color(0xFFFCFAF7),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontFamily: 'Lexend',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            height: 1.5,
-                          ),
-                        ),
                       ),
                     ),
 
                     const SizedBox(height: 32),
 
                     // Don't have an account text
-                    const Center(
-                      child: Text(
-                        'Don\'t have an account? Sign Up',
-                        style: TextStyle(
-                          fontFamily: 'Lexend',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF909090),
-                          height: 1.5,
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/signup');
+                        },
+                        child: const Text(
+                          'Don\'t have an account? Sign Up',
+                          style: TextStyle(
+                            fontFamily: 'Lexend',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF909090),
+                            height: 1.5,
+                          ),
                         ),
                       ),
                     ),
@@ -351,5 +539,30 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
+  }
+
+  // Helper method to check if a field has an error
+  bool _hasError(String field) {
+    final errorMessage = _getErrorMessage(field);
+    return errorMessage.isNotEmpty;
+  }
+
+  // Helper method to get error message for a field using ValidationHelper
+  String _getErrorMessage(String field) {
+    switch (field) {
+      case 'username':
+        return ValidationHelper.validateUsernameOrEmail(
+              _usernameController.text,
+            ) ??
+            '';
+      case 'password':
+        return ValidationHelper.validateRequired(
+              _passwordController.text,
+              'Password',
+            ) ??
+            '';
+      default:
+        return '';
+    }
   }
 }

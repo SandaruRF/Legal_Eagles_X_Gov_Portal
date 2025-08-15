@@ -63,7 +63,7 @@ class _NationalTransportMedicalInstituteScreenState
             // Back button
             GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Container(
+              child: SizedBox(
                 width: 33.5,
                 height: 36,
                 child: const Icon(
