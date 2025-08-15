@@ -35,10 +35,15 @@ async def submit_form_application(
     request_body: SubmitFormRequest,
     current_user: citizen_schema.Citizen = Depends(get_current_user)
 ):
+    temp_dir = None
     try:
         SUPABASE_URL = os.getenv("SUPABASE_URL")
         SUPABASE_KEY = os.getenv("SUPABASE_KEY")
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+        # Get form template to check template_url
+        form_template = await get_form_template(form_id)
+        template_url = form_template.get("template_url") if form_template else None
 
         key_mapping = {
             "Surname": "Surname1",
@@ -79,26 +84,23 @@ async def submit_form_application(
             citizen_id=current_user.citizen_id
         )
 
-        file_path = await fill_pdf(filled_form) 
-
-        async with aiofiles.open(file_path, mode="rb") as f:
-            file_content = await f.read()
-
-        supabase_file_path = f"{current_user.citizen_id}/{form_id}_filled_application.pdf"
-        supabase.storage.from_("gov-portal-filled-forms").upload(
-            supabase_file_path, file_content, {"content-type": "application/pdf", "x-upsert": "true"}
-        )
-
-        public_url = supabase.storage.from_("gov-portal-filled-forms").get_public_url(supabase_file_path)
-
-        temp_dir = os.path.dirname(file_path)
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-
+        public_url = None
+        # Only fill PDF if template_url exists
+        if template_url:
+            file_path = await fill_pdf(filled_form)
+            async with aiofiles.open(file_path, mode="rb") as f:
+                file_content = await f.read()
+            supabase_file_path = f"{current_user.citizen_id}/{form_id}_filled_application.pdf"
+            supabase.storage.from_("gov-portal-filled-forms").upload(
+                supabase_file_path, file_content, {"content-type": "application/pdf", "x-upsert": "true"}
+            )
+            public_url = supabase.storage.from_("gov-portal-filled-forms").get_public_url(supabase_file_path)
+            temp_dir = os.path.dirname(file_path)
+        # Save filled form to DB, pdf url is None if no template
         await db.filledform.create(
             data={
                 "form_id": form_id,
-                "filled_data": json.dumps(request_body.form_data), 
+                "filled_data": json.dumps(request_body.form_data),
                 "citizen_id": current_user.citizen_id,
                 "generated_pdf_url": public_url,
                 "created_at": datetime.now()
