@@ -16,7 +16,7 @@ class KnowledgeBaseService:
             settings = get_settings()
             
             # Initialize ChromaDB client with persistent storage
-            self.client = chromadb.PersistentClient(path="chroma_storage")
+            self.client = chromadb.PersistentClient(path="/tmp/chroma_storage")
             
             # Use Sentence Transformers for embeddings
             self.embedding_function = SentenceTransformerEmbeddings(
