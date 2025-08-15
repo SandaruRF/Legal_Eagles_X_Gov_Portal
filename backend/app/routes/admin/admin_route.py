@@ -9,6 +9,7 @@ from fastapi import UploadFile, File
 from pydantic import BaseModel
 from fastapi import Body, Form
 import json
+from fastapi import HTTPException
 
 
 
