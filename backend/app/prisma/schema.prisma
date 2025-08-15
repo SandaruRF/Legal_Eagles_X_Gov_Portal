@@ -235,32 +235,21 @@ model ContentChangeLog {
   web_page    WebPageRecord? @relation(fields: [web_page_id], references: [id])
 }
 
-model Location {
-  id      String @id @default(cuid())
-  address String
-
-  service_id String
-  service    Service    @relation(fields: [service_id], references: [service_id])
-  TimeSlot   TimeSlot[]
-}
 
 model TimeSlot {
   timeslot_id      String   @id @default(cuid())
-  slot_datetime    DateTime // The start date and time of the slot
+  slot_datetime    DateTime
   location_id      String
-  location         Location @relation(fields: [location_id], references: [id])
-  max_appointments Int      @default(50) // Max capacity for this slot
-
-  assigned_admin_id String
-  assigned_admin    Admin  @relation(fields: [assigned_admin_id], references: [admin_id])
-
-  appointments Appointment[] // Appointments booked for this slot
-
-  appointment_ids String[]
-
-  service_id String
-  service    Service @relation(fields: [service_id], references: [service_id])
+  max_appointments Int      @default(50)
+  assigned_admin_id String?
+  assigned_admin Admin? @relation("AdminTimeSlots", fields: [assigned_admin_id], references: [admin_id])
+  service_id       String?
+  service          Service? @relation("ServiceTimeSlots", fields: [service_id], references: [service_id])
+  location         Location @relation("LocationTimeSlots", fields: [location_id], references: [id])
+  appointments     Appointment[] @relation("TimeSlotAppointments")
+  appointment_ids  String[] @default([])
 }
+
 
 model Notification {
   notification_id String               @id @default(cuid())
@@ -291,18 +280,4 @@ model Location {
   service_id  String
   service     Service @relation(fields: [service_id], references: [service_id])
   time_slots  TimeSlot[] @relation("LocationTimeSlots")
-}
-
-model TimeSlot {
-  timeslot_id      String   @id @default(cuid())
-  slot_datetime    DateTime
-  location_id      String
-  max_appointments Int      @default(50)
-  assigned_admin_id String?
-  assigned_admin Admin? @relation("AdminTimeSlots", fields: [assigned_admin_id], references: [admin_id])
-  service_id       String?
-  service          Service? @relation("ServiceTimeSlots", fields: [service_id], references: [service_id])
-  location         Location @relation("LocationTimeSlots", fields: [location_id], references: [id])
-  appointments     Appointment[] @relation("TimeSlotAppointments")
-  appointment_ids  String[] @default([])
 }
