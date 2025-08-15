@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'dart:async';
+import '../../core/services/kyc_service.dart';
 
 class NICFrontUploadScreen extends ConsumerStatefulWidget {
   final Function(String) onUploadComplete;
@@ -16,6 +19,9 @@ class _NICFrontUploadScreenState extends ConsumerState<NICFrontUploadScreen> {
   UploadState currentState = UploadState.initial;
   double uploadProgress = 0.0;
   Timer? uploadTimer;
+  File? selectedImage;
+  String? uploadedFileName;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -291,9 +297,9 @@ class _NICFrontUploadScreenState extends ConsumerState<NICFrontUploadScreen> {
 
           const SizedBox(height: 4),
 
-          const Text(
-            'myIDcard.jpg',
-            style: TextStyle(
+          Text(
+            uploadedFileName ?? 'image.jpg',
+            style: const TextStyle(
               color: Color(0xFFADAEBC),
               fontSize: 13,
               fontFamily: 'Proxima Nova',
@@ -341,9 +347,9 @@ class _NICFrontUploadScreenState extends ConsumerState<NICFrontUploadScreen> {
 
           const SizedBox(height: 4),
 
-          const Text(
-            'myIDcard.jpg',
-            style: TextStyle(
+          Text(
+            uploadedFileName ?? 'image.jpg',
+            style: const TextStyle(
               color: Color(0xFFADAEBC),
               fontSize: 13,
               fontFamily: 'Proxima Nova',
@@ -382,23 +388,26 @@ class _NICFrontUploadScreenState extends ConsumerState<NICFrontUploadScreen> {
 
           const SizedBox(height: 16),
 
-          // Upload ID Front view button
-          Container(
-            width: double.infinity,
-            height: 48,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF5B00),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Center(
-              child: Text(
-                'Upload ID Front view',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'Proxima Nova',
-                  fontWeight: FontWeight.w700,
+          // Done button to go back to KYC verification
+          InkWell(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: double.infinity,
+              height: 48,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF5B00),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Center(
+                child: Text(
+                  'Done',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: 'Proxima Nova',
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -408,26 +417,134 @@ class _NICFrontUploadScreenState extends ConsumerState<NICFrontUploadScreen> {
     );
   }
 
-  void _startUpload() {
-    setState(() {
-      currentState = UploadState.uploading;
-      uploadProgress = 0.0;
-    });
+  void _startUpload() async {
+    try {
+      // Show image picker options
+      final ImageSource? source = await _showImageSourceDialog();
+      if (source == null) return;
 
-    // Simulate upload progress
+      // Pick image from selected source
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      selectedImage = File(pickedFile.path);
+      uploadedFileName = pickedFile.name;
+
+      setState(() {
+        currentState = UploadState.uploading;
+        uploadProgress = 0.0;
+      });
+
+      // Start upload to backend
+      final kycService = ref.read(kycServiceProvider);
+
+      // Update progress while uploading
+      _startProgressSimulation();
+
+      final response = await kycService.uploadNicFront(selectedImage!);
+
+      // Stop progress simulation
+      uploadTimer?.cancel();
+
+      if (response.success && response.data != null) {
+        setState(() {
+          currentState = UploadState.completed;
+          uploadProgress = 1.0;
+        });
+
+        // Call the callback with the uploaded file path
+        widget.onUploadComplete(selectedImage!.path);
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                response.message.isNotEmpty
+                    ? response.message
+                    : 'NIC front uploaded successfully!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Handle upload error
+        setState(() {
+          currentState = UploadState.initial;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                response.message.isNotEmpty
+                    ? response.message
+                    : 'Upload failed. Please try again.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      uploadTimer?.cancel();
+      setState(() {
+        currentState = UploadState.initial;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Image Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _startProgressSimulation() {
     uploadTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       setState(() {
         uploadProgress += 0.02;
       });
 
-      if (uploadProgress >= 1.0) {
+      if (uploadProgress >= 0.95) {
         timer.cancel();
-        setState(() {
-          currentState = UploadState.completed;
-        });
-
-        // Call the callback with a simulated image path
-        widget.onUploadComplete('assets/images/nic_front_sample.jpg');
+        // Don't complete here, wait for actual API response
       }
     });
   }
@@ -436,6 +553,8 @@ class _NICFrontUploadScreenState extends ConsumerState<NICFrontUploadScreen> {
     setState(() {
       currentState = UploadState.initial;
       uploadProgress = 0.0;
+      selectedImage = null;
+      uploadedFileName = null;
     });
   }
 }

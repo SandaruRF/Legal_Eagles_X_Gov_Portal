@@ -27,86 +27,119 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            // Header
-            Container(
-              height: 60,
-              color: const Color(0xFF404040),
-              child: Row(
-                children: [
-                  // Back button
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: SizedBox(
-                        width: 17.5,
-                        height: 20,
-                        child: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.white,
-                          size: 15,
+            // Header with Gov Portal logo and back button
+            _buildGovPortalHeader(),
+
+            // Content
+            Expanded(
+              child: Container(
+                color: const Color(0xFFF9FAFB),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 58),
+
+                      // Title
+                      const Padding(
+                        padding: EdgeInsets.only(left: 5),
+                        child: Text(
+                          'Select Language',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF1F2937),
+                            height: 1.5,
+                          ),
                         ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // Language Options
+                      ..._languages.map(
+                        (language) => Column(
+                          children: [
+                            _buildLanguageOption(
+                              language['name']!,
+                              _selectedLanguage == language['name'],
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGovPortalHeader() {
+    return Container(
+      width: double.infinity,
+      height: 104,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE5E5E5), width: 1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
+        child: Row(
+          children: [
+            // Back button
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 24,
+                height: 24,
+                margin: const EdgeInsets.only(right: 20),
+                child: const Icon(
+                  Icons.arrow_back_ios,
+                  size: 18,
+                  color: Color(0xFF525252),
+                ),
+              ),
+            ),
+
+            // Gov Portal centered with logo
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Gov logo
+                  Container(
+                    width: 47,
+                    height: 47,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: const DecorationImage(
+                        image: AssetImage('assets/images/gov_portal_logo.png'),
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 32),
-                  // Title
+                  const SizedBox(width: 12),
                   const Text(
-                    'Profile',
+                    'Gov Portal',
                     style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      fontFamily: 'Inter',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF171717),
                       height: 1.5,
                     ),
                   ),
                 ],
-              ),
-            ),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 58),
-
-                    // Title
-                    const Padding(
-                      padding: EdgeInsets.only(left: 5),
-                      child: Text(
-                        'Select Language',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF1F2937),
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // Language Options
-                    ..._languages.map(
-                      (language) => Column(
-                        children: [
-                          _buildLanguageOption(
-                            language['name']!,
-                            _selectedLanguage == language['name'],
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
