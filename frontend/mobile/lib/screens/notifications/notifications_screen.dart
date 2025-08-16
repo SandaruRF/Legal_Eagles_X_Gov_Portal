@@ -270,12 +270,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _loadUnreadNotifications() async {
     try {
-      final response = await _httpClient.get('/notifications/unread');
+      final response = await _httpClient.get('/api/notifications/unread');
       if (response.success && response.data != null) {
-        final List<NotificationItem> unreadNotifications =
-            (response.data['notifications'] as List)
-                .map((json) => NotificationItem.fromJson(json))
-                .toList();
+        List<NotificationItem> unreadNotifications = [];
+
+        // Handle different response structures
+        if (response.data is List) {
+          // Backend returns list directly
+          unreadNotifications =
+              (response.data as List)
+                  .map((json) => NotificationItem.fromJson(json))
+                  .toList();
+        } else if (response.data is Map &&
+            response.data['notifications'] != null) {
+          // Backend returns object with notifications field
+          unreadNotifications =
+              (response.data['notifications'] as List)
+                  .map((json) => NotificationItem.fromJson(json))
+                  .toList();
+        }
 
         setState(() {
           // Merge with existing notifications (remove duplicates)
@@ -284,7 +297,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               notifications.insert(0, newNotification);
             }
           }
-          _unreadCount = response.data['count'] ?? 0;
+          // Count unread notifications
+          _unreadCount = unreadNotifications.length;
         });
       }
     } catch (e) {
@@ -294,17 +308,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markAsRead(String notificationId) async {
     try {
-      await _httpClient.post('/notifications/$notificationId/read');
+      final response = await _httpClient.post(
+        '/api/notifications/$notificationId/read',
+      );
 
-      setState(() {
-        final notification = notifications.firstWhere(
-          (n) => n.id == notificationId,
-        );
-        if (!notification.isRead) {
-          notification.isRead = true;
-          _unreadCount = (_unreadCount - 1).clamp(0, _unreadCount);
-        }
-      });
+      if (response.success) {
+        setState(() {
+          final notification = notifications.firstWhere(
+            (n) => n.id == notificationId,
+          );
+          if (!notification.isRead) {
+            notification.isRead = true;
+            _unreadCount = (_unreadCount - 1).clamp(0, _unreadCount);
+          }
+        });
+      } else {
+        print('Failed to mark notification as read: ${response.message}');
+      }
     } catch (e) {
       print('Failed to mark notification as read: $e');
     }
