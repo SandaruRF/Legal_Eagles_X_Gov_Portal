@@ -17,6 +17,7 @@ dependencies:
   qr_flutter: ^4.1.0
   path_provider: ^2.1.2
   url_launcher: ^6.2.5
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
