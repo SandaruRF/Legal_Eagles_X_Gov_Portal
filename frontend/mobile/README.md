@@ -105,7 +105,7 @@ flutter build web                # Web
 *Last Updated: August 2025 | Version 1.0.0*
 
 </div>
-<div align="center">
+<div align="center">⁂</div>
 
 
 
