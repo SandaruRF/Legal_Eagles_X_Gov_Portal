@@ -281,3 +281,4 @@ model Location {
   service     Service @relation(fields: [service_id], references: [service_id])
   time_slots  TimeSlot[] @relation("LocationTimeSlots")
 }
+
