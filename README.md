@@ -385,40 +385,6 @@ docker-compose up -d
 - **Swagger UI**: [https://anuhasip-gov-portal-backend.hf.space/docs\#](https://anuhasip-gov-portal-backend.hf.space/docs#)
 - **ReDoc**: [https://anuhasip-gov-portal-backend.hf.space/redoc](https://anuhasip-gov-portal-backend.hf.space/redoc)
 
-
-### 🔑 Key API Endpoints
-
-#### Citizen Services
-
-```http
-GET    /api/v1/citizen/services              # List all services
-POST   /api/v1/citizen/appointments          # Book appointment
-GET    /api/v1/citizen/appointments          # Get user appointments
-POST   /api/v1/citizen/applications          # Submit application
-GET    /api/v1/citizen/notifications         # Get notifications
-```
-
-
-#### Admin Operations
-
-```http
-GET    /api/v1/admin/dashboard               # Dashboard analytics
-POST   /api/v1/admin/services               # Create service
-PUT    /api/v1/admin/services/{id}          # Update service
-GET    /api/v1/admin/users                  # Manage users
-GET    /api/v1/admin/reports                # Generate reports
-```
-
-
-#### AI Assistant
-
-```http
-POST   /api/v1/ai/chat                      # AI chat endpoint
-GET    /api/v1/ai/suggestions               # Get smart suggestions
-POST   /api/v1/ai/form-help                 # Form filling assistance
-```
-
-
 ***
 
 ## 🤝 Contributing
