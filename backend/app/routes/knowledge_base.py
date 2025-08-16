@@ -14,6 +14,8 @@ from app.core.auth import get_current_user
 from app.services.message_log import log_message
 from prisma import Prisma
 
+db = Prisma()
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
@@ -70,7 +72,7 @@ async def search_government_services(query: SearchQuery):
         prompt = f"User query: {query.text}\n\nRelevant government services:\n"
         for idx, result in enumerate(search_results, 1):
             prompt += f"{idx}. Title: {result.title}\n   Source: {result.source}\n   Content: {result.content}\n\n"
-        prompt += """Based on the above, You are a helpful and respectful government service information assistant. Your job is to answer user queries about government services, procedures, and information in a clear, polite, and professional manner.
+        prompt += f"""Based on the above, You are a helpful and respectful government service information assistant. Your job is to answer user queries about government services, procedures, and information in a clear, polite, and professional manner.
         system features : {system_features}
         about system : {about}
 
@@ -80,11 +82,11 @@ Always:
 - Format your response with headings, bullet points, and clear sections for readability.
 - If possible, include links or references to official sources but do it only if system not have that facility.
 - Please respond in the following JSON format:
-{
-  "response": "<your respectful, well-formatted answer here>",
+{{
+  "response": "<your respectful, well-formatted answer here, using \\n for new lines and Markdown for headings/lists>",
   "bad_words": <1 if any inappropriate or offensive words are detected in the user's query, otherwise 0>
-}
-Please provide a well-formatted, easy-to-read answer to the user's query. """
+}}
+Do not use nested JSON objects in the response field. Instead, use plain text with \\n for new lines and Markdown formatting for structure. """
 
         # Call Gemini
         print("Gemini API Key:", settings.GEMINI_API_KEY)
@@ -92,17 +94,29 @@ Please provide a well-formatted, easy-to-read answer to the user's query. """
         # print(list(genai.list_models()))
         model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
         gemini_response = model.generate_content(prompt)
+
+        import re
+
+        response_text = gemini_response.text.strip()
+
+        # Remove Markdown code fences if present
+        if response_text.startswith("```"):
+            response_text = re.sub(r"^```(json)?\n", "", response_text)
+            response_text = re.sub(r"\n```$", "", response_text)
+
         try:
-            response_json = json.loads(gemini_response.text)
+            response_json = json.loads(response_text)
         except Exception:
             # fallback if Gemini doesn't return valid JSON
+            print("fallbacked")
             response_json = {
-                "response": gemini_response.text,
+                "response": response_text,
                 "bad_words": 0
-            } 
+            }
+        print("Gemini response:", response_json)
         if response_json["bad_words"]==0:
-            await log_message("-1", query.text, response_json)
-        return response_json
+            await log_message("C0", query.text, json.dumps(response_json["response"]))
+        return response_json["response"]
     
     except Exception as e:
         logger.error(f"Error in knowledge base search: {str(e)}")
@@ -155,7 +169,7 @@ async def search_government_services_secured(query: SearchQuery,current_user: ci
         prompt = f"User query: {query.text}\n\nRelevant government services:\n"
         for idx, result in enumerate(search_results, 1):
             prompt += f"{idx}. Title: {result.title}\n   Source: {result.source}\n   Content: {result.content}\n\n"
-        prompt += """Based on the above, You are a helpful and respectful government service information assistant. Your job is to answer user queries about government services, procedures, and information in a clear, polite, and professional manner.
+        prompt += f"""Based on the above, You are a helpful and respectful government service information assistant. Your job is to answer user queries about government services, procedures, and information in a clear, polite, and professional manner.
         system features : {system_features}
         about system : {about}
 
@@ -165,11 +179,11 @@ Always:
 - Format your response with headings, bullet points, and clear sections for readability.
 - If possible, include links or references to official sources but do it only if system not have that facility.
 - Please respond in the following JSON format:
-{
-  "response": "<your respectful, well-formatted answer here>",
+{{
+  "response": "<your respectful, well-formatted answer here, using \\n for new lines and Markdown for headings/lists>",
   "bad_words": <1 if any inappropriate or offensive words are detected in the user's query, otherwise 0>
-}
-Please provide a well-formatted, easy-to-read answer to the user's query. """
+}}
+Do not use nested JSON objects in the response field. Instead, use plain text with \\n for new lines and Markdown formatting for structure. """
 
         # Call Gemini
         print("Gemini API Key:", settings.GEMINI_API_KEY)
@@ -177,17 +191,29 @@ Please provide a well-formatted, easy-to-read answer to the user's query. """
         # print(list(genai.list_models()))
         model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
         gemini_response = model.generate_content(prompt)
+
+        import re
+
+        response_text = gemini_response.text.strip()
+
+        # Remove Markdown code fences if present
+        if response_text.startswith("```"):
+            response_text = re.sub(r"^```(json)?\n", "", response_text)
+            response_text = re.sub(r"\n```$", "", response_text)
+
         try:
-            response_json = json.loads(gemini_response.text)
+            response_json = json.loads(response_text)
         except Exception:
             # fallback if Gemini doesn't return valid JSON
+            print("fallbacked")
             response_json = {
-                "response": gemini_response.text,
+                "response": response_text,
                 "bad_words": 0
-            }      
+            }
+        print("Gemini response:", response_json)
         if response_json["bad_words"]==0:
-            await log_message(current_user.citizen_id, query.text, response_json)
-        return response_json
+            await log_message(current_user.citizen_id, query.text, json.dumps(response_json["response"]))
+        return response_json["response"]
     
     except Exception as e:
         logger.error(f"Error in knowledge base search: {str(e)}")
@@ -268,18 +294,54 @@ Always:
     
 @router.get("/latest-messages")
 async def get_latest_messages():
-    db = Prisma()
+    
     await db.connect()
     messages = await db.messagelog.find_many(
         order={"created_at": "desc"},
-        take=3
+        take=10  
     )
     await db.disconnect()
-    return messages
+    message_texts = [msg.message for msg in messages]
+
+    prompt = (
+        "You are a government service information assistant. "
+        "Given the following list of user messages, for each message, output 1 if it is suitable to be shown in the recent messages page for other users (informative, respectful, not a duplicate, not generic like \"hi\"), and 0 otherwise. "
+        "If a message appears more than once, only the first occurrence can be 1, others must be 0. "
+        "Return a JSON array of 0s and 1s in the same order as the input.\n\n"
+        "Messages:\n"
+    )
+    for idx, msg in enumerate(message_texts, 1):
+        prompt += f"{idx}. {msg}\n"
+
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
+    gemini_response = model.generate_content(prompt)
+    response_text = gemini_response.text.strip()
+
+    import re
+    if response_text.startswith("```"):
+        response_text = re.sub(r"^```(json)?\n", "", response_text)
+        response_text = re.sub(r"\n```$", "", response_text)
+
+    try:
+        suitability_list = json.loads(response_text)
+    except Exception:
+        suitability_list = [1] * len(messages)  # fallback: all suitable
+
+    # Return messages with suitability
+    suitable_messages = [
+        {
+            "message": msg.message,
+            "response": msg.response
+        }
+        for idx, msg in enumerate(messages)
+        if idx < len(suitability_list) and suitability_list[idx] == 1
+    ]
+    return suitable_messages
 
 @router.get("/latest-messages/me")
 async def get_latest_messages_for_user(current_user: citizen_schema.Citizen = Depends(get_current_user)):
-    db = Prisma()
+
     await db.connect()
     messages = await db.messagelog.find_many(
         where={"citizen_id": current_user.citizen_id},
