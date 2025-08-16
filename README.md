@@ -7,7 +7,7 @@
 
 *Simplifying citizen-government interactions through intelligent assistance and digital transformation*
 
-[🚀 Live Demo](https://anuhasip-gov-portal-admin-dashboard.hf.space/) -  [📱 Download APK](https://google.com) -  [📖 API Docs](https://anuhasip-gov-portal-backend.hf.space/docs#) -  [🐛 Report Bug](https://github.com/SandaruRF/Gov-Portal/issues)
+[🚀 Live Demo](https://anuhasip-gov-portal-admin-dashboard.hf.space/) -  [📱 Download APK](https://drive.google.com/drive/folders/1NdbQH3YcmaVtfMRrOUxFa1TjvwLtjrYL?usp=drive_link&pli=1) -  [📖 API Docs](https://anuhasip-gov-portal-backend.hf.space/docs#) -  [🐛 Report Bug](https://github.com/SandaruRF/Gov-Portal/issues)
 
 </div>
 
@@ -132,7 +132,7 @@ To reduce waiting times, eliminate service uncertainty, and provide universal ac
 ### Option 1: Access Deployed Services (Recommended)
 
 - **🌐 Admin Dashboard:** [Open Dashboard](https://anuhasip-gov-portal-admin-dashboard.hf.space/)  
-- **📱 Mobile App:** Download the APK from the provided link  
+- **📱 Mobile App:** [Download APK](https://drive.google.com/drive/folders/1NdbQH3YcmaVtfMRrOUxFa1TjvwLtjrYL?usp=drive_link&pli=1)
 - **📖 API Documentation:** [View Docs](https://anuhasip-gov-portal-backend.hf.space/docs#)
 
 
@@ -238,7 +238,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 #### Admin Dashboard Setup
 
 ```bash
-cd admin-dashboard
+cd frontend/web
 
 # Install dependencies
 npm install
@@ -254,7 +254,7 @@ npm run build
 #### Mobile App Setup
 
 ```bash
-cd mobile-app
+cd frontend/mobile
 
 # Get Flutter dependencies
 flutter pub get
@@ -296,46 +296,43 @@ flutter build apk --release
 
 ```
 gov-portal/
-├── 🔧 backend/                     # FastAPI Backend
+├── 🔧 backend/                     # FastAPI backend for APIs, database, and business logic
 │   ├── app/
-│   │   ├── core/                   # Core configurations
+│   │   ├── core/                   # Core configurations and settings
 │   │   ├── db/                     # Database operations
 │   │   │   ├── admin/              # Admin CRUD operations
 │   │   │   └── citizen/            # Citizen CRUD operations
 │   │   ├── prisma/                 # Database schema & migrations
 │   │   ├── routes/                 # API endpoints
-│   │   │   ├── admin/              # Admin API routes
-│   │   │   └── citizen/            # Citizen API routes
+│   │   │   ├── admin/              # Admin-specific routes
+│   │   │   └── citizen/            # Citizen-specific routes
 │   │   ├── schemas/                # Pydantic data models
 │   │   ├── services/               # Business logic layer
-│   │   └── main.py                 # FastAPI application entry
+│   │   └── main.py                 # FastAPI application entry point
 │   ├── venv/                       # Python virtual environment
 │   ├── .env                        # Environment variables
-│   ├── Dockerfile                  # Container configuration
+│   ├── Dockerfile                  # Docker configuration
 │   └── requirements.txt            # Python dependencies
-├── 🌐 admin-dashboard/             # React Admin Interface
-│   ├── public/                     # Static assets
-│   ├── src/
-│   │   ├── components/             # Reusable UI components
-│   │   ├── pages/                  # Application pages
-│   │   ├── contexts/               # React context providers
-│   │   ├── services/               # API integration
-│   │   └── styles/                 # CSS and styling
-│   ├── package.json                # Node.js dependencies
-│   └── Dockerfile                  # Container configuration
-├── 📱 mobile-app/                  # Flutter Mobile App
-│   ├── lib/
-│   │   ├── models/                 # Data models
-│   │   ├── screens/                # UI screens
-│   │   ├── services/               # API services
-│   │   ├── widgets/                # Custom widgets
-│   │   └── main.dart               # App entry point
-│   ├── android/                    # Android configuration
-│   ├── ios/                        # iOS configuration
-│   └── pubspec.yaml                # Flutter dependencies
-├── 🐳 docker-compose.yml           # Multi-container orchestration
-├── 📚 docs/                        # Documentation
-└── 📋 README.md                    # Project documentation
+├── frontend/                        # Frontend applications
+│   ├── mobile/                      # Flutter mobile app
+│   │   ├── android/                 # Android-specific files
+│   │   ├── ios/                     # iOS-specific files
+│   │   ├── lib/                     # Flutter app source code
+│   │   ├── assets/                  # Images, icons, and other assets
+│   │   ├── web/                     # Web build of mobile app (Flutter)
+│   │   ├── windows/ linux/ macos/   # Desktop build files
+│   │   ├── pubspec.yaml             # Flutter dependencies
+│   │   ├── README.md                # Mobile app documentation
+│   │   └── ...                      # Other config, build, and markdown files
+│   ├── web/                         # React web application
+│   │   ├── public/                  # Public assets and static files
+│   │   ├── src/                     # Source code (components, services, styles)
+│   │   ├── package.json             # Node dependencies and scripts
+│   │   ├── Dockerfile               # Docker configuration for web
+│   │   └── README.md                # Web app documentation
+├── 🐳 docker-compose.yml           # Docker multi-container orchestration
+├── 📚 docs/                        # Project documentation
+└── 📋 README.md                    # Main project documentation and overview
 ```
 
 
