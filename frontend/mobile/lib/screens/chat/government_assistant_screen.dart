@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/message_log_service.dart';
 
 class GovernmentAssistantScreen extends StatefulWidget {
   const GovernmentAssistantScreen({super.key});
@@ -12,21 +13,33 @@ class _GovernmentAssistantScreenState extends State<GovernmentAssistantScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
-  final List<String> _recentQuestions = [
-    'Sri Lanka citizen digital platform',
-    'Integrating Sri Lanka public sector data',
-    'Sri Lanka visa processing',
-    'GovConnect Sri Lanka model',
-    'Sri Lanka AI agent for e-government',
-  ];
+  List<MessageLog> _recentMessages = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    // Auto-focus the search field when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
     });
+    _fetchRecentMessages();
+  }
+
+  Future<void> _fetchRecentMessages() async {
+    try {
+      final service = MessageLogService();
+      final messages = await service.fetchLatestMessages();
+      setState(() {
+        _recentMessages = messages;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -255,18 +268,24 @@ class _GovernmentAssistantScreenState extends State<GovernmentAssistantScreen> {
 
                   // Recent questions list
                   Expanded(
-                    child: ListView.separated(
-                      itemCount: _recentQuestions.length,
-                      separatorBuilder:
-                          (context, index) => Container(
-                            height: 1,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            color: const Color(0xFFFF5B00).withOpacity(0.26),
-                          ),
-                      itemBuilder: (context, index) {
-                        return _buildQuestionItem(_recentQuestions[index]);
-                      },
-                    ),
+                    child: _isLoading
+                        ? Center(child: CircularProgressIndicator())
+                        : _error != null
+                            ? Center(child: Text('Error: $_error'))
+                            : _recentMessages.isEmpty
+                                ? Center(child: Text('No recent questions found.'))
+                                : ListView.separated(
+                                    itemCount: _recentMessages.length,
+                                    separatorBuilder: (context, index) => Container(
+                                      height: 1,
+                                      margin: const EdgeInsets.symmetric(vertical: 8),
+                                      color: const Color(0xFFFF5B00).withOpacity(0.26),
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final msg = _recentMessages[index];
+                                      return _buildQuestionItem(msg.message);
+                                    },
+                                  ),
                   ),
                 ],
               ),
