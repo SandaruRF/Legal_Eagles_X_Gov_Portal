@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../models/form_field_model.dart';
 
 class DynamicFormWidget extends StatefulWidget {
-  final Map<String, dynamic> formTemplate;
+  final List<FormFieldModel> formFields;
   final String formTitle;
   final Function(Map<String, dynamic>) onSubmit;
   final bool isLoading;
 
   const DynamicFormWidget({
     super.key,
-    required this.formTemplate,
+    required this.formFields,
     required this.formTitle,
     required this.onSubmit,
     this.isLoading = false,
@@ -21,8 +24,12 @@ class DynamicFormWidget extends StatefulWidget {
 
 class _DynamicFormWidgetState extends State<DynamicFormWidget> {
   final _formKey = GlobalKey<FormState>();
+  late Map<String, dynamic> _formData;
   late Map<String, TextEditingController> _controllers;
-  late Map<String, String?> _formData;
+  late Map<String, String?> _selectedValues; // For dropdowns and radio buttons
+  late Map<String, List<String>> _selectedCheckboxes; // For checkboxes
+  late Map<String, File?> _selectedFiles; // For file uploads
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -31,12 +38,32 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
   }
 
   void _initializeForm() {
-    _controllers = {};
     _formData = {};
+    _controllers = {};
+    _selectedValues = {};
+    _selectedCheckboxes = {};
+    _selectedFiles = {};
 
-    for (String fieldName in widget.formTemplate.keys) {
-      _controllers[fieldName] = TextEditingController();
-      _formData[fieldName] = '';
+    for (final field in widget.formFields) {
+      final fieldKey = field.label.toLowerCase().replaceAll(' ', '_');
+
+      if (field.type == 'text' ||
+          field.type == 'email' ||
+          field.type == 'tel' ||
+          field.type == 'textarea' ||
+          field.type == 'number') {
+        _controllers[fieldKey] = TextEditingController();
+      } else if (field.type == 'select' || field.type == 'radio') {
+        _selectedValues[fieldKey] = null;
+      } else if (field.type == 'checkbox') {
+        _selectedCheckboxes[fieldKey] = [];
+      } else if (field.type == 'file') {
+        _selectedFiles[fieldKey] = null;
+      } else if (field.type == 'date') {
+        _controllers[fieldKey] = TextEditingController();
+      }
+
+      _formData[fieldKey] = null;
     }
   }
 
@@ -48,91 +75,100 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
     super.dispose();
   }
 
-  String _formatFieldName(String fieldName) {
-    // Convert field names to more readable format
-    return fieldName
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map(
-          (word) =>
-              word.isNotEmpty
-                  ? word[0].toUpperCase() + word.substring(1).toLowerCase()
-                  : '',
-        )
-        .join(' ')
-        .trim();
-  }
+  String? _validateField(FormFieldModel field) {
+    final fieldKey = field.label.toLowerCase().replaceAll(' ', '_');
 
-  TextInputType _getInputType(String fieldName) {
-    final lowerField = fieldName.toLowerCase();
+    if (!field.required) return null;
 
-    if (lowerField.contains('email')) {
-      return TextInputType.emailAddress;
-    } else if (lowerField.contains('phone') || lowerField.contains('number')) {
-      return TextInputType.phone;
-    } else if (lowerField.contains('date') ||
-        lowerField.contains('year') ||
-        lowerField.contains('month')) {
-      return TextInputType.number;
-    }
-
-    return TextInputType.text;
-  }
-
-  List<TextInputFormatter> _getInputFormatters(String fieldName) {
-    final lowerField = fieldName.toLowerCase();
-
-    if (lowerField.contains('phone') ||
-        lowerField.contains('nic') ||
-        lowerField.contains('number') ||
-        lowerField.contains('year') ||
-        lowerField.contains('month') ||
-        lowerField.contains('date')) {
-      return [FilteringTextInputFormatter.digitsOnly];
-    }
-
-    return [];
-  }
-
-  String? _validateField(String fieldName, String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return '${_formatFieldName(fieldName)} is required';
-    }
-
-    final lowerField = fieldName.toLowerCase();
-
-    if (lowerField.contains('email')) {
-      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-      if (!emailRegex.hasMatch(value)) {
-        return 'Please enter a valid email address';
+    if (field.type == 'text' ||
+        field.type == 'email' ||
+        field.type == 'tel' ||
+        field.type == 'textarea' ||
+        field.type == 'number' ||
+        field.type == 'date') {
+      final value = _controllers[fieldKey]?.text;
+      if (value == null || value.trim().isEmpty) {
+        return '${field.label} is required';
       }
-    }
 
-    if (lowerField.contains('phone')) {
-      if (value.length < 10) {
-        return 'Please enter a valid phone number';
+      if (field.type == 'email') {
+        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+        if (!emailRegex.hasMatch(value)) {
+          return 'Please enter a valid email address';
+        }
       }
-    }
 
-    if (lowerField.contains('nic') && lowerField.contains('no')) {
-      if (value.length != 10 && value.length != 12) {
-        return 'NIC should be 10 or 12 digits';
+      if (field.type == 'number') {
+        final num? numValue = num.tryParse(value);
+        if (numValue == null) {
+          return 'Please enter a valid number';
+        }
+        if (field.minValue != null && numValue < field.minValue!) {
+          return 'Value must be at least ${field.minValue}';
+        }
+        if (field.maxValue != null && numValue > field.maxValue!) {
+          return 'Value must not exceed ${field.maxValue}';
+        }
+      }
+
+      if (field.maxLength != null && value.length > field.maxLength!) {
+        return 'Maximum ${field.maxLength} characters allowed';
+      }
+    } else if (field.type == 'select' || field.type == 'radio') {
+      final value = _selectedValues[fieldKey];
+      if (value == null || value.isEmpty) {
+        return '${field.label} is required';
+      }
+    } else if (field.type == 'checkbox') {
+      final values = _selectedCheckboxes[fieldKey];
+      if (values == null || values.isEmpty) {
+        return '${field.label} is required';
+      }
+    } else if (field.type == 'file') {
+      final file = _selectedFiles[fieldKey];
+      if (file == null) {
+        return '${field.label} is required';
       }
     }
 
     return null;
   }
 
-  Widget _buildFormField(String fieldName) {
-    final controller = _controllers[fieldName]!;
+  Widget _buildFormField(FormFieldModel field) {
+    final fieldKey = field.label.toLowerCase().replaceAll(' ', '_');
 
+    switch (field.type) {
+      case 'text':
+      case 'email':
+      case 'tel':
+        return _buildTextFormField(field, fieldKey);
+      case 'textarea':
+        return _buildTextAreaField(field, fieldKey);
+      case 'number':
+        return _buildNumberField(field, fieldKey);
+      case 'date':
+        return _buildDateField(field, fieldKey);
+      case 'select':
+        return _buildSelectField(field, fieldKey);
+      case 'radio':
+        return _buildRadioField(field, fieldKey);
+      case 'checkbox':
+        return _buildCheckboxField(field, fieldKey);
+      case 'file':
+        return _buildFileField(field, fieldKey);
+      default:
+        return _buildTextFormField(field, fieldKey);
+    }
+  }
+
+  Widget _buildTextFormField(FormFieldModel field, String fieldKey) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _formatFieldName(fieldName),
+            field.label + (field.required ? ' *' : ''),
             style: const TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
@@ -142,15 +178,13 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
           ),
           const SizedBox(height: 8),
           TextFormField(
-            controller: controller,
-            keyboardType: _getInputType(fieldName),
-            inputFormatters: _getInputFormatters(fieldName),
-            validator: (value) => _validateField(fieldName, value),
-            onChanged: (value) {
-              _formData[fieldName] = value;
-            },
+            controller: _controllers[fieldKey],
+            keyboardType: _getKeyboardType(field.type),
+            validator: (_) => _validateField(field),
+            onChanged: (value) => _formData[fieldKey] = value,
             decoration: InputDecoration(
-              hintText: _getHintText(fieldName),
+              hintText:
+                  field.placeholder ?? 'Enter ${field.label.toLowerCase()}',
               hintStyle: const TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 14,
@@ -188,34 +222,523 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
     );
   }
 
-  String _getHintText(String fieldName) {
-    final lowerField = fieldName.toLowerCase();
+  Widget _buildTextAreaField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            field.label + (field.required ? ' *' : ''),
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _controllers[fieldKey],
+            maxLines: 4,
+            validator: (_) => _validateField(field),
+            onChanged: (value) => _formData[fieldKey] = value,
+            decoration: InputDecoration(
+              hintText:
+                  field.placeholder ?? 'Enter ${field.label.toLowerCase()}',
+              hintStyle: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Color(0xFFFF5B00),
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    if (lowerField.contains('email')) {
-      return 'Enter your email address';
-    } else if (lowerField.contains('phone')) {
-      return 'Enter your phone number';
-    } else if (lowerField.contains('nic')) {
-      return 'Enter your NIC number';
-    } else if (lowerField.contains('date')) {
-      return 'DD';
-    } else if (lowerField.contains('month')) {
-      return 'MM';
-    } else if (lowerField.contains('year')) {
-      return 'YYYY';
-    } else if (lowerField.contains('sex')) {
-      return 'Male/Female';
+  Widget _buildNumberField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            field.label + (field.required ? ' *' : ''),
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _controllers[fieldKey],
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (_) => _validateField(field),
+            onChanged: (value) => _formData[fieldKey] = value,
+            decoration: InputDecoration(
+              hintText:
+                  field.placeholder ?? 'Enter ${field.label.toLowerCase()}',
+              hintStyle: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Color(0xFFFF5B00),
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            field.label + (field.required ? ' *' : ''),
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _controllers[fieldKey],
+            readOnly: true,
+            validator: (_) => _validateField(field),
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(1900),
+                lastDate: DateTime(2100),
+              );
+              if (date != null) {
+                final formattedDate =
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                _controllers[fieldKey]!.text = formattedDate;
+                _formData[fieldKey] = formattedDate;
+              }
+            },
+            decoration: InputDecoration(
+              hintText: 'Select date',
+              hintStyle: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+              suffixIcon: const Icon(
+                Icons.calendar_today,
+                color: Color(0xFF9CA3AF),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Color(0xFFFF5B00),
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            field.label + (field.required ? ' *' : ''),
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FormField<String>(
+            validator: (_) => _validateField(field),
+            builder: (formFieldState) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        formFieldState.hasError
+                            ? const Color(0xFFEF4444)
+                            : const Color(0xFFE5E7EB),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedValues[fieldKey],
+                    hint: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Select ${field.label.toLowerCase()}',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ),
+                    isExpanded: true,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedValues[fieldKey] = value;
+                        _formData[fieldKey] = value;
+                      });
+                    },
+                    items:
+                        field.options?.map((option) {
+                          return DropdownMenuItem<String>(
+                            value: option,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Text(
+                                option,
+                                style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  color: Color(0xFF171717),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRadioField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: FormField<String>(
+        validator: (_) => _validateField(field),
+        builder: (formFieldState) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.label + (field.required ? ' *' : ''),
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...field.options?.map((option) {
+                    return RadioListTile<String>(
+                      title: Text(
+                        option,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          color: Color(0xFF171717),
+                        ),
+                      ),
+                      value: option,
+                      groupValue: _selectedValues[fieldKey],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedValues[fieldKey] = value;
+                          _formData[fieldKey] = value;
+                        });
+                      },
+                      activeColor: const Color(0xFFFF5B00),
+                      contentPadding: EdgeInsets.zero,
+                    );
+                  }).toList() ??
+                  [],
+              if (formFieldState.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 8),
+                  child: Text(
+                    formFieldState.errorText!,
+                    style: const TextStyle(
+                      color: Color(0xFFEF4444),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCheckboxField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: FormField<List<String>>(
+        validator: (_) => _validateField(field),
+        builder: (formFieldState) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.label + (field.required ? ' *' : ''),
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...field.options?.map((option) {
+                    return CheckboxListTile(
+                      title: Text(
+                        option,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          color: Color(0xFF171717),
+                        ),
+                      ),
+                      value:
+                          _selectedCheckboxes[fieldKey]?.contains(option) ??
+                          false,
+                      onChanged: (checked) {
+                        setState(() {
+                          if (_selectedCheckboxes[fieldKey] == null) {
+                            _selectedCheckboxes[fieldKey] = [];
+                          }
+                          if (checked == true) {
+                            _selectedCheckboxes[fieldKey]!.add(option);
+                          } else {
+                            _selectedCheckboxes[fieldKey]!.remove(option);
+                          }
+                          _formData[fieldKey] = _selectedCheckboxes[fieldKey];
+                        });
+                      },
+                      activeColor: const Color(0xFFFF5B00),
+                      contentPadding: EdgeInsets.zero,
+                    );
+                  }).toList() ??
+                  [],
+              if (formFieldState.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 8),
+                  child: Text(
+                    formFieldState.errorText!,
+                    style: const TextStyle(
+                      color: Color(0xFFEF4444),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFileField(FormFieldModel field, String fieldKey) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: FormField<File>(
+        validator: (_) => _validateField(field),
+        builder: (formFieldState) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.label + (field.required ? ' *' : ''),
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () async {
+                  final pickedFile = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickedFile != null) {
+                    setState(() {
+                      _selectedFiles[fieldKey] = File(pickedFile.path);
+                      _formData[fieldKey] = _selectedFiles[fieldKey];
+                    });
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color:
+                          formFieldState.hasError
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFFE5E7EB),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cloud_upload, color: Color(0xFF9CA3AF)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _selectedFiles[fieldKey]?.path.split('/').last ??
+                              field.placeholder ??
+                              'Choose file',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            color:
+                                _selectedFiles[fieldKey] != null
+                                    ? const Color(0xFF171717)
+                                    : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (formFieldState.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    formFieldState.errorText!,
+                    style: const TextStyle(
+                      color: Color(0xFFEF4444),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  TextInputType _getKeyboardType(String type) {
+    switch (type) {
+      case 'email':
+        return TextInputType.emailAddress;
+      case 'tel':
+        return TextInputType.phone;
+      case 'number':
+        return TextInputType.number;
+      default:
+        return TextInputType.text;
     }
-
-    return 'Enter ${_formatFieldName(fieldName).toLowerCase()}';
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Clean the form data (remove empty values)
+      // Clean the form data
       final cleanedData = <String, dynamic>{};
       for (var entry in _formData.entries) {
-        cleanedData[entry.key] = entry.value?.trim() ?? '';
+        if (entry.value != null) {
+          cleanedData[entry.key] = entry.value;
+        }
       }
 
       widget.onSubmit(cleanedData);
@@ -333,9 +856,7 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
                     const SizedBox(height: 32),
 
                     // Dynamic form fields
-                    ...widget.formTemplate.keys.map(
-                      (fieldName) => _buildFormField(fieldName),
-                    ),
+                    ...widget.formFields.map((field) => _buildFormField(field)),
 
                     const SizedBox(height: 32),
 
@@ -367,7 +888,7 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
                                 : const Text(
                                   'Submit Application',
                                   style: TextStyle(
-                                    fontFamily: 'Proxima Nova',
+                                    fontFamily: 'Inter',
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,

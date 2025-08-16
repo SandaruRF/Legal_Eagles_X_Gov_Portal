@@ -18,6 +18,9 @@ class ApiConfig {
   static String get vaultDocuments => EnvironmentConfig.vaultDocuments;
   static String get vaultUpload => EnvironmentConfig.vaultUpload;
 
+  // Forms Endpoints
+  static String get forms => EnvironmentConfig.forms;
+
   // Headers
   static Map<String, String> get headers => EnvironmentConfig.headers;
 
