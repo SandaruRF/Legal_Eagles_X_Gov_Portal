@@ -28,6 +28,50 @@ class DynamicFormScreen extends ConsumerStatefulWidget {
 }
 
 class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
+  void _showPassportSuccessDialog(String pdfUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Success'),
+            content: const Text(
+              'Your passport application was submitted successfully!',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  final uri = Uri.parse(pdfUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not open PDF URL')),
+                    );
+                  }
+                },
+                child: const Text('Download PDF'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  _navigateToAppointmentBooking({
+                    'service_id': "S001",
+                    'form_title': widget.formTitle,
+                    'pdf_url': pdfUrl,
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF5B00),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Next'),
+              ),
+            ],
+          ),
+    );
+  }
+
   List<FormFieldModel>? formFields;
   bool isLoading = true;
   String? error;
@@ -259,23 +303,76 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
 
         if (response['status'] == 'success') {
           // Check if there's a PDF document to download (mainly for passport applications)
-          if (response['pdf_url'] != null && response['pdf_url'].toString().isNotEmpty) {
-            await _downloadDocument(
-              response['pdf_url'],
-              '${widget.formTitle}_application.pdf',
+          // if (response['pdf_url'] != null && response['pdf_url'].toString().isNotEmpty) {
+
+          //     response['pdf_url'];
+
+          // }
+
+          // Determine next action based on form type
+
+          void _showPassportSuccessDialog(String pdfUrl) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text('Success'),
+                    content: const Text(
+                      'Your passport application was submitted successfully!',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          final uri = Uri.parse(pdfUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not open PDF URL'),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Download PDF'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          _navigateToAppointmentBooking({
+                            'service_id': "S001",
+                            'form_title': widget.formTitle,
+                            'pdf_url': pdfUrl,
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF5B00),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Next'),
+                      ),
+                    ],
+                  ),
             );
           }
 
-          // Determine next action based on form type
           if (_isPassportApplication()) {
-            // For passport applications, always navigate to appointment booking
-            await _navigateToAppointmentBooking({
-              'service_id': widget.formId,
-              'form_title': widget.formTitle,
-              'pdf_url': response['pdf_url'],
-            });
+            if (response['pdf_url'] != null &&
+                response['pdf_url'].toString().isNotEmpty) {
+              // Show dialog with Download PDF and Next buttons
+              if (response['pdf_url'].endsWith('?')) {
+                response['pdf_url'] = response['pdf_url'].substring(0, response['pdf_url'].length - 1);
+              }              
+              print('PDF URL: ${response['pdf_url']}');
+              _showPassportSuccessDialog(response['pdf_url']);
+            } else {
+              _showSuccessDialog();
+            }
           } else {
-            // For other applications (like medical license), show success message
             _showSuccessDialog();
           }
         } else {
@@ -305,73 +402,90 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
     }
   }
 
-  Future<Map<String, dynamic>> _submitFormWithFiles(
-    Map<String, dynamic> textData,
-    Map<String, File> fileData,
-  ) async {
+  // Assumes the upload endpoint returns a JSON like: {"file_url": "https://..."}
+  Future<String?> uploadFile(File file, String uploadUrl) async {
     try {
-      // Create multipart request
       final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/api/forms/${widget.formId}/submit',
-      );
+        uploadUrl,
+      ); // e.g., 'https://api.yourapp.com/api/files/upload'
       final request = http.MultipartRequest('POST', uri);
 
-      // Add headers including authentication
-      request.headers.addAll({'Accept': 'application/json'});
-
-      // Get and add authorization header
+      // Add authentication headers if needed
       final authHeader = await TokenStorageService.getAuthorizationHeader();
       if (authHeader != null) {
         request.headers['Authorization'] = authHeader;
       }
 
-      // Try to get the current user's citizen ID
-      final authState = ref.read(authProvider);
-      final citizenId = authState.user?.citizenId ?? '12345'; // Fallback ID
-
-      // Add text fields as form_data JSON
-      request.fields['form_data'] = jsonEncode(textData);
-      request.fields['citizen_id'] = citizenId;
-
-      // Add file fields
-      for (final entry in fileData.entries) {
-        final file = entry.value;
-        final multipartFile = await http.MultipartFile.fromPath(
-          entry.key,
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file', // The field name the backend expects for the file
           file.path,
-          filename: file.path.split('/').last,
-        );
-        request.files.add(multipartFile);
-      }
+        ),
+      );
 
-      if (ApiConfig.enableApiLogs) {
-        print('Multipart POST Request: $uri');
-        print('Headers: ${request.headers}');
-        print('Text fields: ${request.fields}');
-        print(
-          'Files: ${request.files.map((f) => '${f.field}: ${f.filename}').join(', ')}',
-        );
-      }
-
-      // Send request
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      if (ApiConfig.enableApiLogs) {
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        // IMPORTANT: Adjust 'file_url' to match the key in your API's response
+        return responseData['file_url'] as String?;
+      } else {
+        print('File upload failed: ${response.body}');
+        return null;
       }
+    } catch (e) {
+      print('Error uploading file: $e');
+      return null;
+    }
+  }
 
-      // Parse response
+  Future<Map<String, dynamic>> _submitFormWithFiles(
+    Map<String, dynamic> textData,
+    Map<String, File> fileData,
+  ) async {
+    // --- Step 1: Upload all files and collect their URLs/IDs ---
+    // final List<String> uploadedFileUrls = [];
+    // for (final file in fileData.values) {
+    //   // You need the correct upload URL from your backend team
+    //   final String uploadUrl = '${ApiConfig.baseUrl}/api/files/upload';
+    //   final url = await uploadFile(file, uploadUrl);
+    //   if (url != null) {
+    //     uploadedFileUrls.add(url);
+    //   } else {
+    //     throw Exception('Failed to upload one or more files.');
+    //   }
+    // }
+
+    // --- Step 2: Add file URLs to your text data and submit as JSON ---
+    // The backend will expect the file URLs in a specific field, e.g., 'attachments'
+    final Map<String, dynamic> finalPayload = {...textData};
+
+    try {
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/api/forms/${widget.formId}/submit',
+      );
+      final authHeader = await TokenStorageService.getAuthorizationHeader();
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (authHeader != null) 'Authorization': authHeader,
+        },
+        body: jsonEncode({
+          'form_data': finalPayload,
+        }), // Structure matches the API doc
+      );
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      if (ApiConfig.enableApiLogs) {
-        print('Multipart request error: $e');
-      }
+      print('Error submitting form: $e');
       throw Exception('Failed to submit form: $e');
     }
   }
@@ -486,28 +600,29 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
     // Check if this is a passport application based on form title or form ID
     final formTitleLower = widget.formTitle.toLowerCase();
     final formIdLower = widget.formId.toLowerCase();
-    
-    return formTitleLower.contains('passport') || 
-           formIdLower.contains('passport') ||
-           formTitleLower.contains('travel document');
+
+    return formTitleLower.contains('passport') ||
+        formIdLower.contains('passport') ||
+        formTitleLower.contains('travel document');
   }
 
   void _showSuccessDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Success'),
-        content: Text('${widget.formTitle} submitted successfully!'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close success dialog
-              Navigator.pop(context); // Go back to previous screen
-            },
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Success'),
+            content: Text('${widget.formTitle} submitted successfully!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close success dialog
+                  Navigator.pop(context); // Go back to previous screen
+                },
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 

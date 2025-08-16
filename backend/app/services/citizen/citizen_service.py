@@ -9,7 +9,9 @@ from PyPDF2.generic import NameObject, BooleanObject
 import os
 import uuid
 import shutil
+import tempfile
 
+from app.core.supabase_client import supabase
 
 async def get_form_template(form_id: str):
     form = await db.formtemplate.find_unique(where={"form_id": form_id})
@@ -74,33 +76,41 @@ async def fill_passport_pdf(form_data, input_pdf, output_pdf):
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
+async def upload_file_to_supabase(file_path: str, file_name: str) -> str:
+    """
+    Uploads a file to Supabase storage and returns the public URL.
+    """
+    bucket_name = "gov-portal-filled-forms"
+    supabase.storage.from_(bucket_name).upload(file_name, file_path, {"content-type": "application/pdf", "x-upsert": "true"})
+    public_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
+    return public_url
 
 async def fill_pdf(filled_form: FilledFormCreate):
     form_template = await db.formtemplate.find_unique(where={"form_id": filled_form.form_id})
     if not form_template or not form_template.template_url:
         raise ValueError("Template URL not found for the given form ID.")
 
-    # Create a unique temp directory for this operation
-    temp_dir = os.path.join("temp_files", str(uuid.uuid4()))
-    os.makedirs(temp_dir, exist_ok=True)
+    with tempfile.TemporaryDirectory() as temp_dir:
+            input_pdf = os.path.join(temp_dir, "template.pdf")
+            output_pdf = os.path.join(temp_dir, "filled_application.pdf")
 
-    input_pdf = os.path.join(temp_dir, "template.pdf")
-    output_pdf = os.path.join(temp_dir, "filled_application.pdf")
+            # Download the template PDF
+            response = requests.get(form_template.template_url)
+            if response.status_code != 200:
+                raise ValueError("Failed to download the template PDF.")
 
-    # Download the template PDF
-    response = requests.get(form_template.template_url)
-    if response.status_code != 200:
-        shutil.rmtree(temp_dir)
-        raise ValueError("Failed to download the template PDF.")
+            with open(input_pdf, "wb") as f:
+                f.write(response.content)
 
-    with open(input_pdf, "wb") as f:
-        f.write(response.content)
+            # Fill the PDF
+            await fill_passport_pdf(filled_form.filled_data, input_pdf, output_pdf)
 
-    # Fill the PDF
-    await fill_passport_pdf(filled_form.filled_data, input_pdf, output_pdf)
+            # UPLOAD the final PDF from the temporary path to your storage
+            unique_filename = f"{str(uuid.uuid4())}_filled_application.pdf"
+            final_pdf_url = await upload_file_to_supabase(output_pdf, unique_filename)
 
-    # Return the path to the filled PDF for further processing (e.g., upload to Supabase)
-    return output_pdf
+            # Return the final, public URL of the uploaded PDF
+            return final_pdf_url
 
 async def create_filled_form(filled_form: FilledFormCreate):
     # Save the filled form data to the database

@@ -37,11 +37,7 @@ async def submit_form_application(
 ):
     temp_dir = None
     try:
-        SUPABASE_URL = os.getenv("SUPABASE_URL")
-        SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-        # Get form template to check template_url
+                # Get form template to check template_url
         form = await db.formtemplate.find_unique(where={"form_id": form_id})
         template_url = form.template_url if form else None
 
@@ -87,15 +83,8 @@ async def submit_form_application(
         public_url = None
         # Only fill PDF if template_url exists
         if template_url:
-            file_path = await fill_pdf(filled_form)
-            async with aiofiles.open(file_path, mode="rb") as f:
-                file_content = await f.read()
-            supabase_file_path = f"{current_user.citizen_id}/{form_id}_filled_application.pdf"
-            supabase.storage.from_("gov-portal-filled-forms").upload(
-                supabase_file_path, file_content, {"content-type": "application/pdf", "x-upsert": "true"}
-            )
-            public_url = supabase.storage.from_("gov-portal-filled-forms").get_public_url(supabase_file_path)
-            temp_dir = os.path.dirname(file_path)
+            public_url = await fill_pdf(filled_form)
+            
         # Save filled form to DB, pdf url is None if no template
         await db.filledform.create(
             data={
