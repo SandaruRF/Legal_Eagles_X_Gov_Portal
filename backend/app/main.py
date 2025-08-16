@@ -23,6 +23,8 @@ from app.services.citizen.appointment_reminder import appointment_reminder_worke
 from app.services.citizen.appointment_status_monitor import appointment_status_monitor
 from app.services.citizen.document_expiry_monitor import document_expiry_monitor
 
+from fastapi.staticfiles import StaticFiles
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_db()
@@ -40,6 +42,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # CORS middleware
 app.add_middleware(

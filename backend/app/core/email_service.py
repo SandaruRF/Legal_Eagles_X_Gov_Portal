@@ -60,9 +60,8 @@ def generate_base_template(title: str, content: str) -> str:
     <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;">
         <div style="max-width: 650px; margin: 20px auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
             
-            <!-- Banner -->
-            <div style="background: linear-gradient(90deg, #FF5B00, #FFC107, #8C1F28); padding:20px; text-align:center;">
-                <img src="{settings.FRONTEND_URL}/static/logo.png" alt="Gov-Portal" style="height:50px; margin-bottom:10px;">
+            <div style="background: linear-gradient(90deg, #FFC107, #FF5B00, #e74c3c); padding:20px; text-align:center;">
+                <img src="https://your-backend-url.com/static/gov_portal_logo.png"   alt="Gov-Portal" style="height:50px;">
                 <h1 style="color:#fff; margin:0; font-size:22px;">{title}</h1>
             </div>
 
