@@ -467,7 +467,7 @@ copies or substantial portions of the Software.
 
 ***
 
-*Last Updated: January 2024 | Version 1.0.0*
+*Last Updated: Augest 2025 | Version 1.0.0*
 
 </div>
 
