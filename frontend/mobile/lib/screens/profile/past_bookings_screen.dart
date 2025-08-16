@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/bottom_navigation_bar.dart';
+import '../../widgets/feedback_popup.dart';
 import '../../models/appointment.dart';
 import '../../core/services/appointments_service.dart';
+import '../../core/services/feedback_tracking_service.dart';
 
 class PastBookingsScreen extends StatefulWidget {
   const PastBookingsScreen({super.key});
@@ -16,6 +18,7 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
   List<Appointment> _appointments = [];
   bool _isLoading = true;
   String _errorMessage = '';
+  Map<String, bool> _feedbackSubmittedMap = {};
 
   @override
   void initState() {
@@ -39,6 +42,8 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
           _appointments = response.data!;
           _isLoading = false;
         });
+        // Load feedback status for each appointment
+        await _loadFeedbackStatus();
       } else {
         setState(() {
           _errorMessage = response.message;
@@ -51,6 +56,56 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadFeedbackStatus() async {
+    final Map<String, bool> feedbackStatusMap = {};
+    for (final appointment in _appointments) {
+      final hasSubmitted =
+          await FeedbackTrackingService.hasFeedbackBeenSubmitted(
+            appointment.appointmentId,
+          );
+      feedbackStatusMap[appointment.appointmentId] = hasSubmitted;
+    }
+    setState(() {
+      _feedbackSubmittedMap = feedbackStatusMap;
+    });
+  }
+
+  void _showFeedbackPopup(Appointment appointment) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FeedbackPopup(
+          appointmentId: appointment.appointmentId,
+          serviceName: appointment.serviceName,
+          onSubmit: (rating, comment) async {
+            // Mark feedback as submitted locally
+            await FeedbackTrackingService.markFeedbackAsSubmitted(
+              appointment.appointmentId,
+            );
+
+            // Update the UI
+            setState(() {
+              _feedbackSubmittedMap[appointment.appointmentId] = true;
+            });
+
+            Navigator.of(context).pop();
+
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Thank you for your feedback!'),
+                backgroundColor: Color(0xFF279541),
+              ),
+            );
+          },
+          onCancel: () {
+            Navigator.of(context).pop();
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -345,6 +400,9 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
   }
 
   Widget _buildAppointmentCard(Appointment appointment) {
+    final bool feedbackSubmitted =
+        _feedbackSubmittedMap[appointment.appointmentId] ?? false;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
@@ -353,104 +411,137 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE5E5E5)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(17),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title and Status
-            Row(
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(17),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    appointment.serviceName,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF171717),
-                      height: 1.5,
+                // Title and Status
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        appointment.serviceName,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF171717),
+                          height: 1.5,
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(appointment.status),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        appointment.status,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white,
+                          height: 1.21,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+
+                // Reference Number
+                Text(
+                  'Reference: ${appointment.referenceNumber}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF525252),
+                    height: 1.21,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  height: 24,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                const SizedBox(height: 7),
+
+                // Submitted date
+                Text(
+                  'Submitted: ${appointment.formattedCreatedDateTime}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF525252),
+                    height: 1.21,
                   ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(appointment.status),
-                    borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 7),
+
+                // Appointment date
+                Text(
+                  'Appointment: ${appointment.formattedAppointmentDateTime}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF525252),
+                    height: 1.21,
                   ),
-                  child: Text(
-                    appointment.status,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white,
-                      height: 1.21,
-                    ),
+                ),
+                const SizedBox(height: 7),
+
+                // Address
+                Text(
+                  'Address: ${appointment.address}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF525252),
+                    height: 1.21,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 7),
+          ),
 
-            // Reference Number
-            Text(
-              'Reference: ${appointment.referenceNumber}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF525252),
-                height: 1.21,
+          // Star icon for feedback - positioned at bottom right
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap:
+                    feedbackSubmitted
+                        ? null
+                        : () => _showFeedbackPopup(appointment),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    feedbackSubmitted ? Icons.star : Icons.star_border,
+                    size: 24,
+                    color:
+                        feedbackSubmitted
+                            ? const Color(0xFFFFA500) // Orange for submitted
+                            : const Color(
+                              0xFFFFA500,
+                            ), // Orange for available too
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 7),
-
-            // Submitted date
-            Text(
-              'Submitted: ${appointment.formattedCreatedDateTime}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF525252),
-                height: 1.21,
-              ),
-            ),
-            const SizedBox(height: 7),
-
-            // Appointment date
-            Text(
-              'Appointment: ${appointment.formattedAppointmentDateTime}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF525252),
-                height: 1.21,
-              ),
-            ),
-            const SizedBox(height: 7),
-
-            // Address
-            Text(
-              'Address: ${appointment.address}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF525252),
-                height: 1.21,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
