@@ -48,6 +48,21 @@ class SearchResponse(BaseModel):
 async def search_government_services(query: SearchQuery):
     """Search government services using natural language"""
     try:
+        await db.connect()
+        messages = await db.messagelog.find_many(
+            where={"citizen_id": "C0"},
+            order={"created_at": "desc"},
+            take=2
+        )
+        await db.disconnect()
+
+        history = [
+        {
+            "message": msg.message,
+            "response": msg.response
+        }
+        for idx, msg in enumerate(messages)
+        ]
         kb_service = KnowledgeBaseService()
         results = await kb_service.search(query.text, query.limit)
         system_features = ["driving license medical form filling"]
@@ -86,7 +101,8 @@ Always:
   "response": "<your respectful, well-formatted answer here, using \\n for new lines and Markdown for headings/lists>",
   "bad_words": <1 if any inappropriate or offensive words are detected in the user's query, otherwise 0>
 }}
-Do not use nested JSON objects in the response field. Instead, use plain text with \\n for new lines and Markdown formatting for structure. """
+Do not use nested JSON objects in the response field. Instead, use plain text with \\n for new lines and Markdown formatting for structure.
+this is the recent chat history : {history} """
 
         # Call Gemini
         print("Gemini API Key:", settings.GEMINI_API_KEY)
@@ -116,6 +132,7 @@ Do not use nested JSON objects in the response field. Instead, use plain text wi
         print("Gemini response:", response_json)
         if response_json["bad_words"]==0:
             await log_message("C0", query.text, json.dumps(response_json["response"]))
+        print("history:", history)
         return response_json["response"]
     
     except Exception as e:
@@ -145,6 +162,22 @@ async def trigger_knowledge_update(): # type: ignore
 async def search_government_services_secured(query: SearchQuery,current_user: citizen_schema.Citizen = Depends(get_current_user)):
     """Search government services using natural language"""
     try:
+        await db.connect()
+        messages = await db.messagelog.find_many(
+            where={"citizen_id": current_user.citizen_id},
+            order={"created_at": "desc"},
+            take=2
+        )
+        await db.disconnect()
+
+        history = [
+        {
+            "message": msg.message,
+            "response": msg.response
+        }
+        for idx, msg in enumerate(messages)
+        ]
+        
         kb_service = KnowledgeBaseService()
         results = await kb_service.search(query.text, query.limit)
         system_features = ["driving license medical form filling"]
@@ -183,7 +216,10 @@ Always:
   "response": "<your respectful, well-formatted answer here, using \\n for new lines and Markdown for headings/lists>",
   "bad_words": <1 if any inappropriate or offensive words are detected in the user's query, otherwise 0>
 }}
-Do not use nested JSON objects in the response field. Instead, use plain text with \\n for new lines and Markdown formatting for structure. """
+Do not use nested JSON objects in the response field. Instead, use plain text with \\n for new lines and Markdown formatting for structure. 
+
+this is the recent chat history : {history}
+"""
 
         # Call Gemini
         print("Gemini API Key:", settings.GEMINI_API_KEY)
