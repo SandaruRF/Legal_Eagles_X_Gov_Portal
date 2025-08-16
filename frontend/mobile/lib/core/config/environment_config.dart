@@ -51,6 +51,15 @@ class EnvironmentConfig {
   static const String vaultDocuments = '$apiVersion/citizen/vault/documents';
   static const String vaultUpload = '$apiVersion/citizen/vault/upload';
 
+  // Forms Endpoints
+  static const String forms = '$apiVersion/forms';
+
+  // Appointments Endpoints
+  static const String appointmentLocations =
+      '$apiVersion/appointments/locations';
+  static const String appointmentSlots = '$apiVersion/appointments/slots';
+  static const String appointmentBook = '$apiVersion/appointments/book';
+
   // Headers
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
