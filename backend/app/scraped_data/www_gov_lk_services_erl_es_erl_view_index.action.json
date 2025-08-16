@@ -1,0 +1,188 @@
+{
+  "url": "https://www.gov.lk/services/erl/es/erl/view/index.action",
+  "title": "ERL",
+  "main_content": "",
+  "sections": [],
+  "headings": [
+    "Online Vehicle Revenue Licence Service",
+    "Please read the following before using this service"
+  ],
+  "links": [
+    {
+      "text": "English",
+      "url": "https://www.gov.lk/services/erl/es/erl/view/index.action?lang=en",
+      "content": {
+        "url": "https://www.gov.lk/services/erl/es/erl/view/index.action?lang=en",
+        "title": "ERL",
+        "main_content": "",
+        "sections": [],
+        "headings": [
+          "Online Vehicle Revenue Licence Service",
+          "Please read the following before using this service"
+        ],
+        "links": [
+          {
+            "text": "English",
+            "url": "https://www.gov.lk/services/erl/es/erl/view/index.action?lang=en"
+          },
+          {
+            "text": "Other Provinces",
+            "url": "https://web.erl2.gov.lk/"
+          }
+        ],
+        "forms": [
+          {
+            "action": "https://www.gov.lk/services/erl/es/erl/view/viewOAuthLogin.action",
+            "method": "post",
+            "inputs": []
+          },
+          {
+            "action": "https://www.gov.lk/services/erl/es/erl/view/index.action",
+            "method": "post",
+            "inputs": []
+          },
+          {
+            "action": "https://www.gov.lk/services/erl/es/erl/view/index.action",
+            "method": "post",
+            "inputs": [
+              {
+                "type": "button",
+                "name": "btnLogin",
+                "placeholder": "",
+                "required": false
+              }
+            ]
+          }
+        ],
+        "downloads": [],
+        "images": [
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/assets/images/help.png",
+            "alt": "",
+            "title": ""
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/assets/images/hspplus.gif",
+            "alt": "",
+            "title": ""
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/assets/images/hspplus.gif",
+            "alt": "",
+            "title": ""
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/assets/images/1919web banner-small.jpg",
+            "alt": "",
+            "title": ""
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/images/facebookIcon.png",
+            "alt": "",
+            "title": "Facebook"
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/images/twitterIcon.png",
+            "alt": "",
+            "title": "Twitter"
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/images/googlePlusIcon.png",
+            "alt": "",
+            "title": "Google+"
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/images/linkedInIcon.png",
+            "alt": "",
+            "title": "LinkedIn"
+          },
+          {
+            "url": "https://www.gov.lk/services/erl/es/erl/assets/images/1919web banner-small.jpg",
+            "alt": "",
+            "title": ""
+          }
+        ],
+        "tables": [],
+        "scraped_at": "2025-08-13T12:11:57.121103"
+      }
+    },
+    {
+      "text": "Other Provinces",
+      "url": "https://web.erl2.gov.lk/"
+    }
+  ],
+  "forms": [
+    {
+      "action": "https://www.gov.lk/services/erl/es/erl/view/viewOAuthLogin.action;jsessionid=EF52F174D1F1F3FF17DDDF1764B881A7.jvm1",
+      "method": "post",
+      "inputs": []
+    },
+    {
+      "action": "https://www.gov.lk/services/erl/es/erl/view/index.action;jsessionid=EF52F174D1F1F3FF17DDDF1764B881A7.jvm1",
+      "method": "post",
+      "inputs": []
+    },
+    {
+      "action": "https://www.gov.lk/services/erl/es/erl/view/index.action;jsessionid=EF52F174D1F1F3FF17DDDF1764B881A7.jvm1",
+      "method": "post",
+      "inputs": [
+        {
+          "type": "button",
+          "name": "btnLogin",
+          "placeholder": "",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "downloads": [],
+  "images": [
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/assets/images/help.png",
+      "alt": "",
+      "title": ""
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/assets/images/hspplus.gif",
+      "alt": "",
+      "title": ""
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/assets/images/hspplus.gif",
+      "alt": "",
+      "title": ""
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/assets/images/1919web banner-small.jpg",
+      "alt": "",
+      "title": ""
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/images/facebookIcon.png",
+      "alt": "",
+      "title": "Facebook"
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/images/twitterIcon.png",
+      "alt": "",
+      "title": "Twitter"
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/images/googlePlusIcon.png",
+      "alt": "",
+      "title": "Google+"
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/images/linkedInIcon.png",
+      "alt": "",
+      "title": "LinkedIn"
+    },
+    {
+      "url": "https://www.gov.lk/services/erl/es/erl/assets/images/1919web banner-small.jpg",
+      "alt": "",
+      "title": ""
+    }
+  ],
+  "tables": [],
+  "scraped_at": "2025-08-13T12:11:56.865660"
+}

@@ -32,6 +32,7 @@ venv/
 env/
 .env/
 ENV/
+app/.env
 
 # Environment variables - VERY IMPORTANT
 # Never commit your .env file which contains secrets.
