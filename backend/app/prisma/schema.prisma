@@ -38,6 +38,14 @@ enum AppointmentStatus {
   NoShow
 }
 
+enum NotificationType {
+  Appointment
+  Document
+  General
+  AppointmentStatusChange  
+  DocumentExpiry
+}
+
 // Notification
 enum NotificationPriority {
   High
@@ -45,11 +53,7 @@ enum NotificationPriority {
   Low
 }
 
-enum NotificationType {
-  Appointment
-  Document
-  General
-}
+
 
 // 4. Define Database Models
 
@@ -290,4 +294,3 @@ model MessageLog {
   citizen_id String
   citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
 }
-
