@@ -50,6 +50,7 @@ async def get_current_user(token: str = Depends(citizen_oauth2_scheme), db: Pris
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        print("Decoding JWT token of a citizen...")
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
@@ -72,6 +73,7 @@ async def get_current_admin(token: str = Depends(admin_oauth2_scheme), db: Prism
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        print("Decoding JWT token of an admin...")
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:

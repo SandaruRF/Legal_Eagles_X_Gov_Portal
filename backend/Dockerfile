@@ -1,23 +1,20 @@
 
-FROM python:3.12.3-slim
+FROM python:3.12-slim
 
-WORKDIR /code
+# Set the working directory in the container
+WORKDIR /app
 
-# Create a non-root user and its home directory
-RUN useradd --create-home appuser
+# Copy the requirements file into the container
+COPY requirements.txt .
 
-ENV PATH="/home/appuser/.local/bin:${PATH}"
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-USER appuser
+# Copy the rest of the application's code into the container
+COPY . .
 
-COPY --chown=appuser:appuser requirements.txt .
-
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-COPY --chown=appuser:appuser ./app ./app
-
+# Generate the Prisma client based on your schema
 RUN prisma generate --schema=./app/prisma/schema.prisma
 
-EXPOSE 7860
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Command to run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

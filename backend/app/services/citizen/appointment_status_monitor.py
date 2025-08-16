@@ -20,7 +20,7 @@ async def appointment_status_monitor():
             # Get appointments with status changes since last check
             appointments = await db.appointment.find_many(
                 where={
-                    "updated_at": {"gt": last_checked},
+                    "created_at": {"gt": last_checked},
                     "status": {"not": "NoShow"}  # Ignore NoShow
                 },
                 include={

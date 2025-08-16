@@ -1,9 +1,11 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
     """
+    GEMINI_API_KEY: str
     DATABASE_URL: str
     SUPABASE_URL: str
     SUPABASE_KEY: str
@@ -18,6 +20,11 @@ class Settings(BaseSettings):
     SMTP_PORT: int
     FRONTEND_URL: str
 
+    # ChromaDB Configuration
+    CHROMADB_HOST: str = "localhost"
+    CHROMADB_PORT: int = 8000
+    CHROMADB_COLLECTION_NAME: str = "government_services_v1"
+    
     # Web Monitoring Settings
     SCRAPING_INTERVAL_MINUTES: int = 30
     MAX_CONCURRENT_SCRAPES: int = 5
@@ -53,4 +60,3 @@ def get_settings() -> Settings:
 
 # Create a global settings instance
 settings = get_settings()
-
