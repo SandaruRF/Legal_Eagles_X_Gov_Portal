@@ -5,8 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from prisma import Prisma
 
-from app.core.config import settings
-
+from fastapi import WebSocket, status
 from app.core.config import settings
 from app.core.database import get_db
 from app.db.citizen import db_citizen
@@ -84,3 +83,20 @@ async def get_current_admin(token: str = Depends(admin_oauth2_scheme), db: Prism
     if admin is None:
         raise credentials_exception
     return admin
+
+
+
+async def get_current_user_ws(token: str) -> Optional[citizen_schema.Citizen]:
+    """WebSocket version of get_current_user"""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        
+        # Get minimal user info needed for WebSocket
+        db = await get_db()
+        user = await db.citizen.find_first(where={"email": email})
+        return user
+    except JWTError:
+        return None

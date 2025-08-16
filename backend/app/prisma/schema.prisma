@@ -38,6 +38,14 @@ enum AppointmentStatus {
   NoShow
 }
 
+enum NotificationType {
+  Appointment
+  Document
+  General
+  AppointmentStatusChange  
+  DocumentExpiry
+}
+
 // Notification
 enum NotificationPriority {
   High
@@ -45,11 +53,7 @@ enum NotificationPriority {
   Low
 }
 
-enum NotificationType {
-  Appointment
-  Document
-  General
-}
+
 
 // 4. Define Database Models
 
