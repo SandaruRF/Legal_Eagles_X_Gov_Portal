@@ -63,20 +63,6 @@ class _AppointmentDocumentUploadScreenState
             'accepted_formats': ['jpg', 'jpeg', 'png', 'pdf'],
           },
           {
-            'id': 'passport_photo',
-            'name': 'Passport Size Photo',
-            'description': 'Recent passport-size photograph with white background',
-            'required': true,
-            'accepted_formats': ['jpg', 'jpeg', 'png'],
-          },
-          {
-            'id': 'address_proof',
-            'name': 'Address Proof',
-            'description': 'Utility bill, bank statement, or rental agreement',
-            'required': true,
-            'accepted_formats': ['jpg', 'jpeg', 'png', 'pdf'],
-          },
-          {
             'id': 'supporting_docs',
             'name': 'Supporting Documents',
             'description': 'Any additional documents related to your application',
@@ -306,7 +292,7 @@ class _AppointmentDocumentUploadScreenState
           children: [
             Icon(Icons.check_circle, color: Colors.green, size: 28),
             SizedBox(width: 8),
-            Text('Appointment Booked!'),
+            Text('Booked!'),
           ],
         ),
         content: Column(
