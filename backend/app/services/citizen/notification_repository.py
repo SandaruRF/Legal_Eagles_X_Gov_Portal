@@ -4,11 +4,9 @@ from app.core.database import get_db
 from app.core.websocket_manager import websocket_manager
 from app.core.email_service import send_notification_email
 from app.schemas.citizen.notification import NotificationCreate
-from prisma import Notification
-from typing import Optional
-from typing import Optional, List
+from typing import Optional, List, Any
 # backend/app/services/citizen/notification_repository.py
-async def create_notification(db: Prisma, notification_data: NotificationCreate) -> Optional[Notification]:
+async def create_notification(db: Prisma, notification_data: NotificationCreate) -> Optional[Any]:
     """Create a new notification with type-specific handling"""
     notification = await db.notification.create({
         "message": notification_data.message,
@@ -55,14 +53,14 @@ async def create_notification(db: Prisma, notification_data: NotificationCreate)
 
     return notification
 
-async def mark_notification_as_read(db: Prisma, notification_id: str) -> Optional[Notification]:
+async def mark_notification_as_read(db: Prisma, notification_id: str) -> Optional[Any]:
     """Mark a notification as read"""
     return await db.notification.update(
         where={"notification_id": notification_id},
         data={"is_read": True}
     )
 
-async def get_unread_notifications(db: Prisma, citizen_id: str) -> List[Notification]:
+async def get_unread_notifications(db: Prisma, citizen_id: str) -> List[Any]:
     """Get all unread notifications for a citizen"""
     return await db.notification.find_many(
         where={

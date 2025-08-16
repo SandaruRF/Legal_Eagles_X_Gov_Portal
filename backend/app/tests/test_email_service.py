@@ -29,7 +29,7 @@ async def main():
         status="Confirmed"
     )
     await send_notification_email(
-        email="recipient@example.com",
+        email="shiharaf8@gmail.com",
         subject="Test Appointment Status",
         message="Your appointment status has been updated.",
         notification_type="AppointmentStatusChange",
@@ -43,12 +43,12 @@ async def main():
         document_id="12345"
     )
     await send_notification_email(
-        email="recipient@example.com",
+        email="shiharaf8@gmail.com",
         subject="Test Document Expiry",
         message="Your document is about to expire.",
         notification_type="DocumentExpiry",
-        appointment=None  # Not needed here
+        appointment=document  # Not needed here
     )
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     asyncio.run(main())
