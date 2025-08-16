@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
 import '../../core/services/http_client_service.dart';
 import '../../core/config/environment_config.dart';
 import 'appointment_time_slot_screen.dart';
@@ -40,13 +41,16 @@ class _AppointmentLocationScreenState
         error = null;
       });
 
+      print('Loading locations for service ID: ${widget.serviceId}');
+
       final response = await _httpClient.get(
         '${EnvironmentConfig.appointmentLocations}/${widget.serviceId}',
       );
 
       if (response.success && response.data != null) {
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
         setState(() {
-          locations = List<Map<String, dynamic>>.from(response.data);
+          locations = List<Map<String, dynamic>>.from(data);
           isLoading = false;
         });
       } else {
@@ -172,9 +176,13 @@ class _AppointmentLocationScreenState
       itemBuilder: (context, index) {
         final location = locations![index];
 
+        final isSelected = selectedLocationId == location['location_id'].toString();
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
+          color: isSelected ? const Color(0xFFFFF3E0) : null,
           child: ListTile(
+            selected: isSelected,
+            selectedTileColor: const Color(0xFFFFF3E0),
             contentPadding: const EdgeInsets.all(16),
             leading: Container(
               padding: const EdgeInsets.all(8),
@@ -183,10 +191,6 @@ class _AppointmentLocationScreenState
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.location_on, color: Color(0xFFFF5B00)),
-            ),
-            title: Text(
-              location['name'] ?? 'Unknown Location',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +235,7 @@ class _AppointmentLocationScreenState
               ],
             ),
             trailing: Radio<String>(
-              value: location['id'].toString(),
+              value: location['location_id'].toString(),
               groupValue: selectedLocationId,
               onChanged: (value) {
                 setState(() {
@@ -242,7 +246,7 @@ class _AppointmentLocationScreenState
             ),
             onTap: () {
               setState(() {
-                selectedLocationId = location['id'].toString();
+                selectedLocationId = location['location_id'].toString();
               });
             },
           ),

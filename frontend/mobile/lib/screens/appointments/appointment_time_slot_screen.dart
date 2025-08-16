@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../core/services/http_client_service.dart';
+import '../../core/services/token_storage_service.dart';
 import '../../core/config/environment_config.dart';
 
 class AppointmentTimeSlotScreen extends ConsumerStatefulWidget {
@@ -37,46 +40,62 @@ class _AppointmentTimeSlotScreenState
   }
 
   Future<void> _loadAvailableSlots() async {
+    print('DEBUG: _loadAvailableSlots called');
     try {
       setState(() {
         isLoading = true;
         error = null;
       });
 
-      final response = await _httpClient.get(
-        EnvironmentConfig.appointmentSlots,
-        queryParameters: {
-          'service_id': widget.serviceId,
-          'location_id': widget.locationId,
+      // Use raw HTTP client instead of HttpClientService
+      final uri = Uri.parse('${EnvironmentConfig.baseUrl}${EnvironmentConfig.appointmentSlots}/${widget.serviceId}/${widget.locationId}');
+      final authHeader = await TokenStorageService.getAuthorizationHeader();
+      
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          if (authHeader != null) 'Authorization': authHeader,
         },
       );
 
-      if (response.success && response.data != null) {
-        // Group slots by date
-        final Map<String, List<Map<String, dynamic>>> groupedSlots = {};
+      print('DEBUG: HTTP response status: ${response.statusCode}');
+      print('DEBUG: HTTP response body: ${response.body}');
 
-        if (response.data is List) {
-          for (var slot in response.data) {
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+        print('DEBUG: Parsed response data: $responseData');
+
+        if (responseData['status'] == 'success' && responseData['available_slots'] != null) {
+          // Group slots by date
+          final Map<String, List<Map<String, dynamic>>> groupedSlots = {};
+
+          final List<dynamic> slotsList = responseData['available_slots'];
+          for (var slot in slotsList) {
             final date = slot['date'] ?? '';
             if (!groupedSlots.containsKey(date)) {
               groupedSlots[date] = [];
             }
             groupedSlots[date]!.add(Map<String, dynamic>.from(slot));
           }
-        }
 
-        setState(() {
-          availableSlots = groupedSlots;
-          isLoading = false;
-          // Select first available date
-          if (groupedSlots.isNotEmpty) {
-            selectedDate = groupedSlots.keys.first;
-          }
-        });
+          print('DEBUG: Grouped slots: $groupedSlots');
+          setState(() {
+            availableSlots = groupedSlots;
+            isLoading = false;
+            // Select first available date
+            if (groupedSlots.isNotEmpty) {
+              selectedDate = groupedSlots.keys.first;
+            }
+          });
+        } else {
+          throw Exception('Invalid response format or no available slots');
+        }
       } else {
-        throw Exception(response.message);
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
+      print('DEBUG: Exception in _loadAvailableSlots: $e');
       setState(() {
         error = e.toString();
         isLoading = false;
@@ -197,6 +216,82 @@ class _AppointmentTimeSlotScreenState
     );
   }
 
+  Widget _buildTimeSlots(List<Map<String, dynamic>> slots) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 2.5,
+      ),
+      itemCount: slots.length,
+      itemBuilder: (context, index) {
+        final slot = slots[index];
+        final slotId = slot['slot_id'].toString();
+        final isSelected = selectedSlotId == slotId;
+        final isAvailable = slot['available'] == true;
+
+        return GestureDetector(
+          onTap: isAvailable
+              ? () {
+                  setState(() {
+                    selectedSlotId = slotId;
+                  });
+                }
+              : null,
+          child: Container(
+            decoration: BoxDecoration(
+              color: !isAvailable
+                  ? Colors.grey.shade200
+                  : isSelected
+                      ? const Color(0xFFFF5B00)
+                      : Colors.white,
+              border: Border.all(
+                color: !isAvailable
+                    ? Colors.grey.shade400
+                    : isSelected
+                        ? const Color(0xFFFF5B00)
+                        : Colors.grey.shade300,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    slot['time'] ?? '',
+                    style: TextStyle(
+                      color: !isAvailable
+                          ? Colors.grey
+                          : isSelected
+                              ? Colors.white
+                              : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (slot['officer'] != null && slot['officer']['name'] != null)
+                    Text(
+                      slot['officer']['name'],
+                      style: TextStyle(
+                        color: !isAvailable
+                            ? Colors.grey
+                            : isSelected
+                                ? Colors.white70
+                                : Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   String _getSelectedSlotTime() {
     if (selectedDate == null ||
         selectedSlotId == null ||
@@ -207,7 +302,7 @@ class _AppointmentTimeSlotScreenState
     final slots = availableSlots![selectedDate!];
     if (slots != null) {
       final selectedSlot = slots.firstWhere(
-        (slot) => slot['id'].toString() == selectedSlotId,
+        (slot) => slot['slot_id'].toString() == selectedSlotId,
         orElse: () => {},
       );
       return selectedSlot['time'] ?? '';
@@ -377,69 +472,6 @@ class _AppointmentTimeSlotScreenState
                   ),
         ),
       ],
-    );
-  }
-
-  Widget _buildTimeSlots(List<Map<String, dynamic>> slots) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 2.5,
-      ),
-      itemCount: slots.length,
-      itemBuilder: (context, index) {
-        final slot = slots[index];
-        final slotId = slot['id'].toString();
-        final isSelected = selectedSlotId == slotId;
-        final isAvailable = slot['available'] == true;
-
-        return GestureDetector(
-          onTap:
-              isAvailable
-                  ? () {
-                    setState(() {
-                      selectedSlotId = slotId;
-                    });
-                  }
-                  : null,
-          child: Container(
-            decoration: BoxDecoration(
-              color:
-                  !isAvailable
-                      ? Colors.grey.shade200
-                      : isSelected
-                      ? const Color(0xFFFF5B00)
-                      : Colors.white,
-              border: Border.all(
-                color:
-                    !isAvailable
-                        ? Colors.grey.shade400
-                        : isSelected
-                        ? const Color(0xFFFF5B00)
-                        : Colors.grey.shade300,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                slot['time'] ?? '',
-                style: TextStyle(
-                  color:
-                      !isAvailable
-                          ? Colors.grey.shade600
-                          : isSelected
-                          ? Colors.white
-                          : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
