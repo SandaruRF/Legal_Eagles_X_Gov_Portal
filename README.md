@@ -1,15 +1,7 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
 # Gov Portal
 
 <div align="center">
 
-
-[
-[
-[
-[
-[
 
 **AI-Powered Government Services Platform for Sri Lanka**
 
@@ -121,45 +113,27 @@ To reduce waiting times, eliminate service uncertainty, and provide universal ac
 
 | **Component** | **Technology** | **Purpose** |
 |---------------|----------------|-------------|
-| **Backend API** |  | High-performance, modern Python API framework |
-| **Database** |  | Robust, scalable relational database (Supabase hosted) |
-| **ORM** |  | Type-safe database client and schema management |
-| **Mobile App** |  | Cross-platform native mobile application |
-| **Web Dashboard** |  | Modern, responsive administrative interface |
+| **Backend API** | FastAPI | High-performance, modern Python API framework |
+| **Database** | PostgreSQL | Robust, scalable relational database (Supabase hosted) |
+| **ORM** | Prisma | Type-safe database client and schema management |
+| **Mobile App** | Flutter | Cross-platform native mobile application |
+| **Web Dashboard** | React | Modern, responsive administrative interface |
 | **Message Queue** |  | Caching and background task processing |
-| **AI Integration** |  | Advanced natural language processing |
-| **Deployment** |  | Containerized deployment and scaling |
+| **AI Integration** | Gemini | Advanced natural language processing |
+| **Deployment** | Hugging Face | Containerized deployment and scaling |
 
 </div>
 
-***
-
-## 📱 Screenshots
-
-<div align="center">
-
-### 🖥️ Admin Dashboard
-
-*Comprehensive administrative interface with analytics, user management, and service configuration*
-
-### 📱 Mobile Application
-
-*Intuitive mobile interface for citizens to access all government services*
-
-</div>
 
 ***
 
 ## 🚀 Quick Start
 
-### Option 1: Use Deployed Services (Recommended)
+### Option 1: Access Deployed Services (Recommended)
 
-```bash
-# Access the live applications immediately:
-# 🌐 Admin Dashboard: https://anuhasip-gov-portal-admin-dashboard.hf.space/
-# 📱 Mobile App: Download APK from provided link
-# 📖 API Documentation: https://anuhasip-gov-portal-backend.hf.space/docs#
-```
+- **🌐 Admin Dashboard:** [Open Dashboard](https://anuhasip-gov-portal-admin-dashboard.hf.space/)  
+- **📱 Mobile App:** Download the APK from the provided link  
+- **📖 API Documentation:** [View Docs](https://anuhasip-gov-portal-backend.hf.space/docs#)
 
 
 ### Option 2: Local Development Setup
@@ -465,29 +439,6 @@ We welcome contributions from the community! Here's how you can help:
 - Consider implementation complexity
 
 
-### 🔧 Code Contributions
-
-```bash
-# Fork the repository
-git clone https://github.com/your-username/Gov-Portal.git
-cd Gov-Portal
-
-# Create a feature branch
-git checkout -b feature/amazing-feature
-
-# Make your changes and test thoroughly
-# Follow the existing code style and conventions
-
-# Commit with clear messages
-git commit -m "Add amazing feature that does X"
-
-# Push to your fork
-git push origin feature/amazing-feature
-
-# Create a Pull Request
-```
-
-
 ### 📝 Development Guidelines
 
 - Follow existing code style and conventions
@@ -521,16 +472,21 @@ copies or substantial portions of the Software.
 
 ***
 
-## 👨💻 Author
+## 👨💻 Authors
 
 <div align="center">
 
-### **Sandaru Fernando**
-*Software Engineer & AI Enthusiast*
+### **Development Team**
 
-[
-[
-[
+- **Sandaru Fernando**  
+- **Anuhas Paranavithana**  
+- **Nadil Siriwardhana**  
+- **Roshana Helapalla** 
+- **Seniru Epasinghe** 
+- **Udara Wickramasinghe**   
+- **Shihara Fernando**  
+- **Sathsara Jayalath** 
+- **Savindu Kumarasekara** 
 
 *"Bridging the gap between citizens and government through innovative technology"*
 
@@ -546,17 +502,11 @@ copies or substantial portions of the Software.
 
 **⭐ Star this repository if you find it helpful!**
 
-[
-[
-
 ***
 
 *Last Updated: January 2024 | Version 1.0.0*
 
 </div>
+
 <div style="text-align: center">⁂</div>
-
-[^1]: https://drive.google.com/file/d/1JW9IfNykGz3o7lca0ahLewNfMZgUbxq0/view
-
-[^2]: https://drive.google.com/file/d/1JW9IfNykGz3o7lca0ahLewNfMZgUbxq
 
