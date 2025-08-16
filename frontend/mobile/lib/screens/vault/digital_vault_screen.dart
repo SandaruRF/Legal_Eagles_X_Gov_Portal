@@ -1,42 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/qr_verification_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
+import '../../providers/user_provider.dart';
+import '../../providers/vault_provider.dart';
+import '../../models/vault_document.dart';
 
-class DigitalVaultScreen extends StatefulWidget {
+class DigitalVaultScreen extends ConsumerStatefulWidget {
   const DigitalVaultScreen({super.key});
 
   @override
-  State<DigitalVaultScreen> createState() => _DigitalVaultScreenState();
+  ConsumerState<DigitalVaultScreen> createState() => _DigitalVaultScreenState();
 }
 
-class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
-  final List<Map<String, dynamic>> _documents = [
-    {
-      'title': 'National Identity Card',
-      'status': 'Verified',
-      'isVerified': true,
-    },
-    {'title': 'Driving license', 'status': 'Verified', 'isVerified': true},
-    {
-      'title': 'License Insurance',
-      'status': 'Pending Approval',
-      'isVerified': false,
-    },
-  ];
+class _DigitalVaultScreenState extends ConsumerState<DigitalVaultScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user profile and vault documents when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userProvider.notifier).fetchUserProfile();
+      ref.read(vaultProvider.notifier).fetchVaultDocuments();
+    });
+  }
 
   void _showQRVerification() {
+    final user = ref.read(userProvider).user;
     showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.61),
       builder: (BuildContext context) {
-        return const QRVerificationOverlay();
+        return QRVerificationOverlay(user: user);
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userProvider);
+    final user = userState.user;
+    final vaultState = ref.watch(vaultProvider);
+    final documents = vaultState.documents;
+    final isLoadingVault = vaultState.isLoading;
+    final vaultError = vaultState.error;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: Column(
@@ -127,225 +136,345 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
 
           // Main content
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Digital ID Card Section
-                    Container(
-                      width: double.infinity,
-                      height: 132,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        gradient: const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [Color(0xFF8C1F28), Color(0xFFFF5B00)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await Future.wait([
+                  ref.read(userProvider.notifier).fetchUserProfile(),
+                  ref.read(vaultProvider.notifier).fetchVaultDocuments(),
+                ]);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Digital ID Card Section
+                      Container(
+                        width: double.infinity,
+                        height: 132,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          gradient: const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [Color(0xFF8C1F28), Color(0xFFFF5B00)],
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top section with title and QR icon
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Digital ID Card',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                      height: 1.5,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Top section with title and QR icon
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Digital ID Card',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.white,
+                                        height: 1.5,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '**** **** **** 1234',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                      height: 1.43,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      user?.fullName ?? 'Loading...',
+                                      style: const TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        height: 1.43,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
+                                  ],
                                 ),
-                                child: const Icon(
-                                  Icons.qr_code,
-                                  color: Color(0xFF171717),
-                                  size: 16,
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                  ),
+                                  child: const Icon(
+                                    Icons.qr_code,
+                                    color: Color(0xFF171717),
+                                    size: 16,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
 
-                          const Spacer(),
+                            const Spacer(),
 
-                          // Bottom section with details
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Valid Until',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                      height: 1.33,
+                            // Bottom section with details
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Created',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.white,
+                                        height: 1.33,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '12/2030',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                      height: 1.43,
+                                    Text(
+                                      user?.createdAt != null
+                                          ? () {
+                                            final date = user!.createdAt!;
+                                            return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                                          }()
+                                          : 'Loading...',
+                                      style: const TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.white,
+                                        height: 1.43,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Citizen ID',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                      height: 1.33,
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text(
+                                      'NIC Number',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.white,
+                                        height: 1.33,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    'SL123456789V',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                      height: 1.43,
+                                    Text(
+                                      user?.nicNo ?? 'Loading...',
+                                      style: const TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.white,
+                                        height: 1.43,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Verify with QR Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _showQRVerification,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5B00),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Verify with QR',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            height: 1.21,
-                          ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 16),
 
-                    // Available Documents Section
-                    const Text(
-                      'Available Documents',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF171717),
-                        height: 1.21,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Documents list
-                    for (int i = 0; i < _documents.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildDocumentCard(_documents[i]),
-                      ),
-
-                    const SizedBox(height: 16),
-
-                    // Add Document Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Add document functionality
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5B00),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      // Verify with QR Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _showQRVerification,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF5B00),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
                           ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Add Document',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            height: 1.21,
+                          child: const Text(
+                            'Verify with QR',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              height: 1.21,
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 100), // Space for bottom navigation
-                  ],
+                      const SizedBox(height: 32),
+
+                      // Available Documents Section
+                      const Text(
+                        'Available Documents',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF171717),
+                          height: 1.21,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Show error if any
+                      if (vaultError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red.shade600,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Error loading documents',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.red.shade800,
+                                        ),
+                                      ),
+                                      Text(
+                                        vaultError,
+                                        style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    ref
+                                        .read(vaultProvider.notifier)
+                                        .fetchVaultDocuments();
+                                  },
+                                  icon: Icon(
+                                    Icons.refresh,
+                                    color: Colors.red.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Documents list
+                      if (isLoadingVault)
+                        const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF5B00),
+                            ),
+                          ),
+                        )
+                      else if (documents.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.description_outlined,
+                                  size: 48,
+                                  color: Color(0xFF737373),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No documents found',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF737373),
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Add your first document to get started',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF737373),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        for (int i = 0; i < documents.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildDocumentCard(documents[i]),
+                          ),
+
+                      const SizedBox(height: 16),
+
+                      // Add Document Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/document_upload');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF5B00),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Add Document',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              height: 1.21,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 100,
+                      ), // Space for bottom navigation
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -353,46 +482,8 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
         ],
       ),
 
-      // Bottom Navigation
-      bottomNavigationBar: Container(
-        height: 82,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF2F2F2),
-          border: Border(top: BorderSide(color: Color(0xFFE5E5E5), width: 1)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(
-              icon: Icons.home,
-              label: 'Home',
-              isSelected: false,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/home_signed_in');
-              },
-            ),
-            _buildNavItem(
-              icon: Icons.search,
-              label: 'Search',
-              isSelected: true,
-              onTap: () {},
-            ),
-            _buildNavItem(
-              icon: Icons.notifications,
-              label: 'Notification',
-              isSelected: false,
-              onTap: () {
-                Navigator.pushNamed(context, '/notifications');
-              },
-            ),
-            _buildNavItem(
-              icon: Icons.settings,
-              label: 'Settings',
-              isSelected: false,
-              onTap: () {},
-            ),
-          ],
-        ),
+      bottomNavigationBar: const CustomBottomNavigationBar(
+        currentPage: 'search',
       ),
 
       // Floating Action Button
@@ -425,7 +516,7 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'Digital Vault');
                 },
               );
             },
@@ -443,10 +534,10 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
     );
   }
 
-  Widget _buildDocumentCard(Map<String, dynamic> document) {
+  Widget _buildDocumentCard(VaultDocument document) {
     return GestureDetector(
       onTap: () {
-        if (document['title'].toLowerCase().contains('driving license')) {
+        if (document.documentType == VaultDocumentType.license) {
           Navigator.pushNamed(context, '/add_driving_license');
         }
       },
@@ -461,6 +552,22 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
         ),
         child: Row(
           children: [
+            // Status indicator (green for uploaded, orange for expiring soon, red for expired)
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color:
+                    document.isExpired
+                        ? Colors.red
+                        : document.isExpiringSoon
+                        ? Colors.orange
+                        : Colors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+
             // Document info
             Expanded(
               child: Column(
@@ -468,7 +575,7 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    document['title'],
+                    document.displayName,
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 14,
@@ -481,12 +588,23 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    document['status'],
-                    style: const TextStyle(
+                    document.hasExpiry
+                        ? document.isExpired
+                            ? 'Expired'
+                            : document.isExpiringSoon
+                            ? 'Expires soon'
+                            : 'Valid'
+                        : 'No expiry',
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF737373),
+                      color:
+                          document.isExpired
+                              ? Colors.red.shade700
+                              : document.isExpiringSoon
+                              ? Colors.orange.shade700
+                              : Colors.green.shade700,
                       height: 1.21,
                     ),
                     maxLines: 1,
@@ -495,6 +613,27 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
                 ],
               ),
             ),
+
+            // Document count badge (if multiple files)
+            if (document.documentUrls.length > 1) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5B00).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${document.documentUrls.length}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFFF5B00),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
 
             // Edit icon
             Container(
@@ -505,42 +644,6 @@ class _DigitalVaultScreenState extends State<DigitalVaultScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color:
-                isSelected ? const Color(0xFFFF5B00) : const Color(0xFF85A3BB),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color:
-                  isSelected
-                      ? const Color(0xFFFF5B00)
-                      : const Color(0xFF85A3BB),
-              height: 1.57,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../widgets/bottom_navigation_bar.dart';
+import '../../widgets/chatbot_overlay.dart';
+import '../forms/dynamic_form_screen.dart';
 
 class ImmigrationEmigrationScreen extends StatefulWidget {
   const ImmigrationEmigrationScreen({super.key});
@@ -10,8 +13,6 @@ class ImmigrationEmigrationScreen extends StatefulWidget {
 
 class _ImmigrationEmigrationScreenState
     extends State<ImmigrationEmigrationScreen> {
-  bool _isChatbotVisible = false;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,12 +48,11 @@ class _ImmigrationEmigrationScreenState
                 ),
               ],
             ),
-            _buildBottomNavigation(),
-            if (_isChatbotVisible) _buildChatbotOverlay(),
             _buildFloatingChatbotButton(),
           ],
         ),
       ),
+      bottomNavigationBar: const CustomBottomNavigationBar(currentPage: 'home'),
     );
   }
 
@@ -64,45 +64,56 @@ class _ImmigrationEmigrationScreenState
       ),
       child: Row(
         children: [
-          const SizedBox(width: 120),
-          const Expanded(
-            child: Text(
-              'Gov Portal',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF171717),
+          // Back button
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 33.5,
+              height: 33.5,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
               ),
-              textAlign: TextAlign.center,
+              child: const Icon(
+                Icons.arrow_back_ios,
+                color: Color(0xFF525252),
+                size: 18,
+              ),
             ),
           ),
-          Container(
-            width: 47,
-            height: 47,
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.grey[200],
+          const SizedBox(width: 12),
+
+          // Gov Portal logo and text (centered)
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 47,
+                  height: 47,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/gov_portal_logo.png'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Gov Portal',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF171717),
+                  ),
+                ),
+              ],
             ),
           ),
-          Container(
-            width: 19,
-            height: 15,
-            margin: const EdgeInsets.only(right: 16),
-            child: const Icon(
-              Icons.notifications_outlined,
-              size: 18,
-              color: Color(0xFF525252),
-            ),
-          ),
-          Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black,
-            ),
-          ),
+
+          const SizedBox(width: 45.5), // Balance the back button width
         ],
       ),
     );
@@ -165,44 +176,58 @@ class _ImmigrationEmigrationScreenState
   }
 
   Widget _buildMainServiceCard() {
-    return Container(
-      width: double.infinity,
-      height: 90,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E5E5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 4,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => const DynamicFormScreen(
+                  formId: 'cmecukyjl000157mhnb9tci62',
+                  formTitle: 'Passport Application',
+                ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: _iconContainer(
-              size: 48,
-              imagePath: 'assets/images/passport_application_icon.png',
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E5E5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 4,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: 16),
-              child: Text(
-                'Reserve a date to submit a passport application',
-                style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: _iconContainer(
+                size: 48,
+                imagePath: 'assets/images/passport_application_icon.png',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _arrowChip(),
-          ),
-        ],
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: Text(
+                  'Reserve a date to submit a passport application',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _arrowChip(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -294,44 +319,58 @@ class _ImmigrationEmigrationScreenState
   }
 
   Widget _buildApplyPassportCard() {
-    return Container(
-      width: double.infinity,
-      height: 90,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E5E5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 4,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => const DynamicFormScreen(
+                  formId: 'cmecukyjl000157mhnb9tci62',
+                  formTitle: 'Apply Passport Online',
+                ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: _iconContainer(
-              size: 45,
-              imagePath: 'assets/images/apply_passport_icon.png',
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E5E5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 4,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: 16),
-              child: Text(
-                'Apply Passport online',
-                style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: _iconContainer(
+                size: 45,
+                imagePath: 'assets/images/apply_passport_icon.png',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _arrowChip(),
-          ),
-        ],
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: Text(
+                  'Apply Passport online',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _arrowChip(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -393,126 +432,53 @@ class _ImmigrationEmigrationScreenState
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 88,
-        color: const Color(0xFFF2F2F2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home, 'Home'),
-            _buildNavItem(Icons.search, 'Search'),
-            _buildNavItem(Icons.notifications, 'Notification'),
-            _buildNavItem(Icons.settings, 'Settings'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: const Color(0xFF85A3BB), size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF85A3BB),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildFloatingChatbotButton() {
     return Positioned(
-      bottom: 100,
-      right: 16,
-      child: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _isChatbotVisible = !_isChatbotVisible;
-          });
-        },
-        backgroundColor: const Color(0xFFFF5B00),
-        child: const Icon(Icons.chat, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildChatbotOverlay() {
-    return Positioned(
-      bottom: 170,
+      bottom: 40, // Lowered from 95 to 80
       right: 16,
       child: Container(
-        width: 300,
-        height: 400,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF262626),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF5B00),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Gov Assistant',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _isChatbotVisible = false;
-                      });
-                    },
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () {
+              showDialog(
+                context: context,
+                barrierDismissible: true,
+                barrierColor: Colors.transparent,
+                builder: (BuildContext context) {
+                  return const ChatbotOverlay(
+                    currentPage: 'Immigration & Emigration',
+                  );
+                },
+              );
+            },
+            child: const Center(
+              child: Icon(
+                Icons.chat_bubble_outline,
+                color: Colors.white,
+                size: 16,
               ),
             ),
-            const Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(
-                  child: Text(
-                    'How can I help you with government services today?',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

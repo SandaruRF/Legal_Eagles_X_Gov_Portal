@@ -1,10 +1,16 @@
-from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Optional, Union
 from fastapi.security import OAuth2PasswordRequestForm
 from prisma import Prisma
 
 from prisma.errors import UniqueViolationError
 from fastapi.responses import JSONResponse
+from fastapi import UploadFile, File
+from pydantic import BaseModel
+from fastapi import Body, Form
+import json
+from fastapi import HTTPException
+
 
 
 from app.core.database import get_db
@@ -13,6 +19,7 @@ from app.schemas.admin import admin_schema
 from app.schemas import token_schema
 from app.core import auth
 from app.services.admin import admin_service
+from app.schemas.admin.form_schema import FormTemplateRequest
 
 router = APIRouter(prefix="/admins", tags=["Admins"])
 
@@ -144,3 +151,50 @@ async def update_appointment_status_admin(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+
+
+@router.post("/store-form-template")
+async def store_form_template_endpoint(
+    request: str = Form(...),
+    template_file: Optional[UploadFile] = File(None),
+    # current_admin: admin_schema.Admin = Depends(auth.get_current_admin)
+):
+    """
+    Receives a multipart/form-data request with a JSON string in 'request' and an optional file. Creates a new Service row, then stores the form template using the generated service_id.
+    """
+    import json
+    try:
+        request_dict = json.loads(request)
+        validated = FormTemplateRequest(**request_dict)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request format: {e}")
+    template_url = None
+    if template_file is not None and isinstance(template_file, UploadFile):
+        template_bytes = await template_file.read()
+        template_filename = template_file.filename
+        from app.core.supabase_client import supabase
+        BUCKET_NAME = "gov-portal-form-templates"
+        file_path = template_filename
+        supabase.storage.from_(BUCKET_NAME).upload(file_path, template_bytes, {"content-type": "application/pdf", "x-upsert": "true"})
+        template_url = supabase.storage.from_(BUCKET_NAME).get_public_url(file_path)
+    required_documents_json = json.dumps(validated.required_documents)
+    new_service = await db.service.create(
+        data={
+            "name": validated.service_name,
+            "description": validated.service_description,
+            "required_documents": required_documents_json,
+            "department_id": validated.department_id
+        }
+    )
+    service_id = new_service.service_id
+    form_template_json = json.dumps(validated.form_template)
+    new_template = await db.formtemplate.create(
+        data={
+            "form_name": validated.form_name,
+            "service_id": service_id,
+            "form_template": form_template_json,
+            "template_url": template_url
+        }
+    )
+    return JSONResponse(content={"status": "success", "form_id": new_template.form_id, "service_id": service_id})

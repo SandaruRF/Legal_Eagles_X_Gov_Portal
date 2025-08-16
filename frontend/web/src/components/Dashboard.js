@@ -18,6 +18,7 @@ import Analytics from "./Analytics";
 import Feedback from "./Feedback";
 import ServiceManagement from "./service_management/ServiceManagement";
 import AdminManagement from "./AdminManagement";
+import KYCVerifications from "./KYCVerifications";
 import govPortalLogo from "../images/gov-portal-logo.png";
 
 const Dashboard = () => {
@@ -99,6 +100,10 @@ const Dashboard = () => {
             case "admin-management":
                 return (
                     <AdminManagement departmentId={currentUser.department_id} />
+                );
+            case "kyc verifications":
+                return (
+                    <KYCVerifications departmentId={currentUser.department_id} />
                 );
             default:
                 return <Overview departmentId={currentUser.department_id} />;
@@ -192,6 +197,17 @@ const Dashboard = () => {
                         <MdFeedback style={{ marginRight: "0.5rem" }} />
                         Feedback
                     </button>
+                    
+                    <button
+                        className={`nav-item ${
+                            activeTab === "kyc verifications" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavClick("kyc verifications")}
+                    >
+                        <MdPeople style={{ marginRight: "0.5rem" }} />
+                        KYC Verifications
+                    </button>
+                    
                     <button
                         className={`nav-item ${
                             activeTab === "service-management" ? "active" : ""

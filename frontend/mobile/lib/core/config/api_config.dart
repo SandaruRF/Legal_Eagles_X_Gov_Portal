@@ -7,9 +7,19 @@ class ApiConfig {
   // Endpoints
   static String get citizensRegister => EnvironmentConfig.citizensRegister;
   static String get citizensLogin => EnvironmentConfig.citizensLogin;
+  static String get citizensMe => EnvironmentConfig.citizensMe;
 
   // KYC Endpoints
   static String get kycUploadNicFront => EnvironmentConfig.kycUploadNicFront;
+  static String get kycUploadNicBack => EnvironmentConfig.kycUploadNicBack;
+  static String get kycUploadSelfie => EnvironmentConfig.kycUploadSelfie;
+
+  // Vault Endpoints
+  static String get vaultDocuments => EnvironmentConfig.vaultDocuments;
+  static String get vaultUpload => EnvironmentConfig.vaultUpload;
+
+  // Forms Endpoints
+  static String get forms => EnvironmentConfig.forms;
 
   // Headers
   static Map<String, String> get headers => EnvironmentConfig.headers;

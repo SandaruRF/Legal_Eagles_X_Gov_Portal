@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../core/services/chatbot_overlay_service.dart';
 
 class ChatbotOverlay extends StatefulWidget {
-  const ChatbotOverlay({super.key});
+  final String currentPage;
+
+  const ChatbotOverlay({super.key, required this.currentPage});
 
   @override
   State<ChatbotOverlay> createState() => _ChatbotOverlayState();
@@ -10,16 +13,19 @@ class ChatbotOverlay extends StatefulWidget {
 class _ChatbotOverlayState extends State<ChatbotOverlay> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ChatbotOverlayService _chatbotService = ChatbotOverlayService();
+  bool _isLoading = false;
+
   final List<ChatMessage> _messages = [
     ChatMessage(
-      text: 'Hello! How can I assist you with your passport application today?',
+      text: 'Hello! How can I assist you with your government services today?',
       isBot: true,
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
   ];
 
   void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+    if (_messageController.text.trim().isEmpty || _isLoading) return;
 
     final userMessage = ChatMessage(
       text: _messageController.text.trim(),
@@ -27,50 +33,63 @@ class _ChatbotOverlayState extends State<ChatbotOverlay> {
       timestamp: DateTime.now(),
     );
 
+    final userMessageText = _messageController.text.trim();
+
     setState(() {
       _messages.add(userMessage);
+      _isLoading = true;
     });
 
     _messageController.clear();
-
-    // Simulate bot response
-    Future.delayed(const Duration(milliseconds: 800), () {
-      final botResponse = ChatMessage(
-        text: _getBotResponse(userMessage.text),
-        isBot: true,
-        timestamp: DateTime.now(),
-      );
-
-      setState(() {
-        _messages.add(botResponse);
-      });
-
-      _scrollToBottom();
-    });
-
     _scrollToBottom();
-  }
 
-  String _getBotResponse(String userMessage) {
-    final lowerMessage = userMessage.toLowerCase();
+    // Call the backend API
+    _chatbotService
+        .searchForHelp(
+          text: userMessageText,
+          page: widget.currentPage,
+          limit: 5,
+        )
+        .then((response) {
+          String botResponseText;
 
-    if (lowerMessage.contains('passport')) {
-      return 'You will need your National Identity Card (NIC), birth certificate, and any previous passports. For more details, please visit our website.';
-    } else if (lowerMessage.contains('document') ||
-        lowerMessage.contains('papers')) {
-      return 'For passport applications, you typically need: NIC, birth certificate, previous passport (if any), and passport-sized photographs.';
-    } else if (lowerMessage.contains('time') ||
-        lowerMessage.contains('how long')) {
-      return 'Passport processing usually takes 7-14 working days for standard applications. Express service is available for urgent cases.';
-    } else if (lowerMessage.contains('fee') ||
-        lowerMessage.contains('cost') ||
-        lowerMessage.contains('price')) {
-      return 'Passport application fees vary based on the type of passport and processing time. Please check our official website for current rates.';
-    } else if (lowerMessage.contains('hello') || lowerMessage.contains('hi')) {
-      return 'Hello! I\'m here to help you with government services. What can I assist you with today?';
-    } else {
-      return 'I understand you\'re asking about government services. Could you please be more specific about what you need help with? I can assist with passport applications, documentation, fees, and processing times.';
-    }
+          if (response.success && response.data != null) {
+            botResponseText = response.data!;
+          } else {
+            // Use fallback response on API failure
+            botResponseText = _chatbotService.getFallbackResponse(
+              userMessageText,
+            );
+          }
+
+          final botResponse = ChatMessage(
+            text: botResponseText,
+            isBot: true,
+            timestamp: DateTime.now(),
+          );
+
+          setState(() {
+            _messages.add(botResponse);
+            _isLoading = false;
+          });
+
+          _scrollToBottom();
+        })
+        .catchError((error) {
+          // Use fallback response on error
+          final botResponse = ChatMessage(
+            text: _chatbotService.getFallbackResponse(userMessageText),
+            isBot: true,
+            timestamp: DateTime.now(),
+          );
+
+          setState(() {
+            _messages.add(botResponse);
+            _isLoading = false;
+          });
+
+          _scrollToBottom();
+        });
   }
 
   void _scrollToBottom() {
@@ -209,8 +228,12 @@ class _ChatbotOverlayState extends State<ChatbotOverlay> {
                       child: ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.all(16),
-                        itemCount: _messages.length,
+                        itemCount: _messages.length + (_isLoading ? 1 : 0),
                         itemBuilder: (context, index) {
+                          if (index == _messages.length && _isLoading) {
+                            // Show loading indicator
+                            return _buildLoadingBubble();
+                          }
                           final message = _messages[index];
                           return _buildMessageBubble(message);
                         },
@@ -248,7 +271,7 @@ class _ChatbotOverlayState extends State<ChatbotOverlay> {
                                 style: const TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 13,
-                                  color: Colors.white,
+                                  color: Colors.black,
                                 ),
                               ),
                             ),
@@ -299,7 +322,18 @@ class _ChatbotOverlayState extends State<ChatbotOverlay> {
                 shape: BoxShape.circle,
                 color: Color(0xFFFF5B00),
               ),
-              child: const Icon(Icons.smart_toy, color: Colors.white, size: 16),
+              child: ClipOval(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(
+                        'assets/images/home_chatbot_avatar.png',
+                      ),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 8),
             // Bot message
@@ -310,14 +344,8 @@ class _ChatbotOverlayState extends State<ChatbotOverlay> {
                   color: const Color(0xFFF5E8E8),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  message.text,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: Color(0xFF1C0F0D),
-                    height: 1.15,
-                  ),
+                child: RichText(
+                  text: TextSpan(children: _parseMarkdownText(message.text)),
                 ),
               ),
             ),
@@ -356,25 +384,135 @@ class _ChatbotOverlayState extends State<ChatbotOverlay> {
               height: 33,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF000000),
+                color: Color(0xFF2E2E2E),
               ),
-              child: ClipOval(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(
-                        'assets/images/home_chatbot_avatar.png', // Use same avatar for now
-                      ),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 20),
             ),
           ],
         ],
       ),
     );
+  }
+
+  Widget _buildLoadingBubble() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Bot avatar
+          Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFFF5B00),
+            ),
+            child: ClipOval(
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/home_chatbot_avatar.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Loading message
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5E8E8),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFF5B00),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Searching...',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: Color(0xFF1C0F0D),
+                    height: 1.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to parse markdown-style bold text
+  List<TextSpan> _parseMarkdownText(String text) {
+    final List<TextSpan> spans = [];
+    final RegExp boldPattern = RegExp(r'\*\*(.*?)\*\*');
+
+    int lastIndex = 0;
+    for (final match in boldPattern.allMatches(text)) {
+      // Add text before the bold section
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: Color(0xFF1C0F0D),
+              height: 1.6,
+            ),
+          ),
+        );
+      }
+
+      // Add the bold text (without the ** markers)
+      spans.add(
+        TextSpan(
+          text: match.group(1), // The text inside **
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            color: Color(0xFF1C0F0D),
+            height: 1.6,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+
+      lastIndex = match.end;
+    }
+
+    // Add any remaining text after the last bold section
+    if (lastIndex < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(lastIndex),
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            color: Color(0xFF1C0F0D),
+            height: 1.6,
+          ),
+        ),
+      );
+    }
+
+    return spans;
   }
 }
 

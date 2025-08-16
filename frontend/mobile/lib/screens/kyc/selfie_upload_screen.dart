@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'dart:async';
+import '../../core/services/kyc_service.dart';
+import 'selfie_success_screen.dart';
 
-class SelfieUploadScreen extends StatefulWidget {
+class SelfieUploadScreen extends ConsumerStatefulWidget {
   final Function(String)? onUploadComplete;
 
   const SelfieUploadScreen({super.key, this.onUploadComplete});
 
   @override
-  State<SelfieUploadScreen> createState() => _SelfieUploadScreenState();
+  ConsumerState<SelfieUploadScreen> createState() => _SelfieUploadScreenState();
 }
 
 enum UploadState { initial, uploading, completed }
 
-class _SelfieUploadScreenState extends State<SelfieUploadScreen> {
+class _SelfieUploadScreenState extends ConsumerState<SelfieUploadScreen> {
   UploadState _currentState = UploadState.initial;
   double _uploadProgress = 0.0;
   Timer? _progressTimer;
+  File? selectedImage;
+  String? uploadedFileName;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -23,35 +31,155 @@ class _SelfieUploadScreenState extends State<SelfieUploadScreen> {
     super.dispose();
   }
 
-  void _startUpload() {
-    setState(() {
-      _currentState = UploadState.uploading;
-      _uploadProgress = 0.0;
-    });
+  void _startUpload() async {
+    try {
+      // Show image picker options
+      final ImageSource? source = await _showImageSourceDialog();
+      if (source == null) return;
 
-    _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      // Pick image from selected source
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      selectedImage = File(pickedFile.path);
+      uploadedFileName = pickedFile.name;
+
       setState(() {
-        _uploadProgress += 0.02;
-        if (_uploadProgress >= 1.0) {
+        _currentState = UploadState.uploading;
+        _uploadProgress = 0.0;
+      });
+
+      // Start upload to backend
+      final kycService = ref.read(kycServiceProvider);
+
+      // Update progress while uploading
+      _startProgressSimulation();
+
+      final response = await kycService.uploadSelfie(selectedImage!);
+
+      // Stop progress simulation
+      _progressTimer?.cancel();
+
+      if (response.success && response.data != null) {
+        setState(() {
           _uploadProgress = 1.0;
           _currentState = UploadState.completed;
-          timer.cancel();
+        });
 
-          // Call the callback if provided
-          if (widget.onUploadComplete != null) {
-            widget.onUploadComplete!('selfie_uploaded');
-          }
+        // Call the callback with the uploaded file path
+        if (widget.onUploadComplete != null) {
+          widget.onUploadComplete!(selectedImage!.path);
         }
+
+        // Show success message and navigate to success screen
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Selfie uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate to success screen after a short delay
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => SelfieSuccessScreen(
+                        onUploadComplete: widget.onUploadComplete,
+                      ),
+                ),
+              );
+            }
+          });
+        }
+      } else {
+        // Handle upload error
+        setState(() {
+          _currentState = UploadState.initial;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: ${response.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _progressTimer?.cancel();
+      setState(() {
+        _currentState = UploadState.initial;
       });
-    });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _deleteUpload() {
     setState(() {
       _currentState = UploadState.initial;
       _uploadProgress = 0.0;
+      selectedImage = null;
+      uploadedFileName = null;
     });
     _progressTimer?.cancel();
+  }
+
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Image Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _startProgressSimulation() {
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      setState(() {
+        _uploadProgress += 0.02;
+      });
+
+      if (_uploadProgress >= 0.95) {
+        timer.cancel();
+        // Don't complete here, wait for actual API response
+      }
+    });
   }
 
   Widget _buildUploadArea() {

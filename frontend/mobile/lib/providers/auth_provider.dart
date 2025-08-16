@@ -5,6 +5,7 @@ import '../models/api_response.dart';
 import '../models/login_response.dart';
 import '../core/services/auth_service.dart';
 import '../core/services/http_client_service.dart';
+import '../core/services/token_storage_service.dart';
 
 // Auth state enumeration
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
@@ -53,6 +54,52 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _httpClient.initialize();
     // You can check for stored auth token here if using local storage
     state = state.copyWith(status: AuthStatus.unauthenticated);
+  }
+
+  // Restore authentication from saved token
+  Future<bool> restoreAuthentication() async {
+    try {
+      final hasToken = await TokenStorageService.hasToken();
+
+      if (hasToken) {
+        final token = await TokenStorageService.getToken();
+        final tokenType = await TokenStorageService.getTokenType();
+
+        if (token != null && tokenType != null) {
+          // Set the auth token in HTTP client
+          _httpClient.setAuthToken(token);
+
+          // Validate the token by calling the /me endpoint
+          final userResponse = await _authService.validateCurrentUser();
+
+          if (userResponse.success && userResponse.data != null) {
+            // Token is valid, update state with user data
+            state = state.copyWith(
+              status: AuthStatus.authenticated,
+              user: userResponse.data,
+            );
+            return true;
+          } else {
+            // Token is invalid, clear it
+            await TokenStorageService.clearToken();
+            _httpClient.setAuthToken(null);
+            state = state.copyWith(status: AuthStatus.unauthenticated);
+            return false;
+          }
+        }
+      }
+
+      // No valid token found
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+      return false;
+    } catch (e) {
+      print('Error restoring authentication: $e');
+      // Clear potentially invalid token
+      await TokenStorageService.clearToken();
+      _httpClient.setAuthToken(null);
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+      return false;
+    }
   }
 
   // Register new user
@@ -113,14 +160,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
       );
 
-      if (response.success) {
+      if (response.success && response.data != null) {
+        // Save the authentication token to persistent storage
+        final loginData = response.data!;
+        await TokenStorageService.saveToken(
+          loginData.accessToken,
+          'Bearer', // Assuming Bearer token type
+        );
+
         // Get user profile after successful login
         final profileResponse = await _authService.getUserProfile();
 
         if (profileResponse.success && profileResponse.data != null) {
+          final user = profileResponse.data!;
+
+          // Save user ID and citizen ID to SharedPreferences
+          if (user.id != null) {
+            await TokenStorageService.saveUserId(user.id!);
+          }
+          if (user.citizenId != null) {
+            await TokenStorageService.saveCitizenId(user.citizenId!);
+          }
+
           state = state.copyWith(
             status: AuthStatus.authenticated,
-            user: profileResponse.data,
+            user: user,
             isLoading: false,
             errorMessage: null,
           );
@@ -257,7 +321,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Logout user
-  void logout() {
+  Future<void> logout() async {
+    await TokenStorageService.clearToken();
     _authService.logout();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
@@ -270,6 +335,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await _authService.deleteAccount();
 
       if (response.success) {
+        await TokenStorageService.clearToken();
         state = const AuthState(status: AuthStatus.unauthenticated);
       } else {
         state = state.copyWith(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'selfie_upload_progress_screen.dart';
+import 'selfie_upload_screen.dart';
 
 class SelfiePreparationScreen extends StatelessWidget {
   final Function(String)? onUploadComplete;
@@ -150,7 +150,7 @@ class SelfiePreparationScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder:
-                                  (context) => SelfieUploadProgressScreen(
+                                  (context) => SelfieUploadScreen(
                                     onUploadComplete: onUploadComplete,
                                   ),
                             ),

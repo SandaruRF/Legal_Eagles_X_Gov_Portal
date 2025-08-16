@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
+import '../../models/appointment.dart';
+import '../../core/services/appointments_service.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -9,6 +12,54 @@ class MyBookingsScreen extends StatefulWidget {
 }
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
+  final AppointmentsService _appointmentsService = AppointmentsService();
+  List<Appointment> _allAppointments = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAllBookings();
+  }
+
+  Future<void> _fetchAllBookings() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      // Fetch appointments from all 4 statuses
+      final List<Future<dynamic>> futures = [
+        _appointmentsService.getAppointmentsByStatus('Completed'),
+        _appointmentsService.getAppointmentsByStatus('Confirmed'),
+        _appointmentsService.getAppointmentsByStatus('Booked'),
+        _appointmentsService.getAppointmentsByStatus('Cancelled'),
+      ];
+
+      final responses = await Future.wait(futures);
+
+      List<Appointment> allAppointments = [];
+
+      for (var response in responses) {
+        if (response.success && response.data != null) {
+          allAppointments.addAll(response.data!);
+        }
+      }
+
+      setState(() {
+        _allAppointments = allAppointments;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load bookings: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,95 +185,21 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Booking Card
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E5E5)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(17),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title and Mark as Complete button
-                                Row(
-                                  children: [
-                                    const Expanded(
-                                      child: Text(
-                                        'Driving License Medical Appointment',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          color: Color(0xFF171717),
-                                          height: 1.5,
-                                        ),
-                                      ),
+                        // Content based on loading state
+                        Expanded(
+                          child:
+                              _isLoading
+                                  ? const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFFFF5B00),
                                     ),
-
-                                    const SizedBox(width: 12),
-
-                                    // Mark as Complete button
-                                    Container(
-                                      height: 24,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFF5B00),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'Mark as Complete',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.white,
-                                          height: 1.21,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 7),
-
-                                // Submitted date
-                                const Text(
-                                  'Submitted: January 10, 2025 at 2:30 PM',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF525252),
-                                    height: 1.21,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 7),
-
-                                // Appointment date
-                                const Text(
-                                  'Appointment: January 15, 2025 at 10:00 AM',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF525252),
-                                    height: 1.21,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                                  )
+                                  : _errorMessage.isNotEmpty
+                                  ? _buildErrorWidget()
+                                  : _allAppointments.isEmpty
+                                  ? _buildEmptyWidget()
+                                  : _buildAppointmentsList(),
                         ),
-
-                        const Spacer(),
                       ],
                     ),
                   ),
@@ -231,7 +208,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             ),
 
             // Bottom Navigation
-            _buildBottomNavigation(),
+            Positioned(
+              bottom: -10, // Lowered by 10 pixels to match past bookings
+              left: 0,
+              right: 0,
+              child: const CustomBottomNavigationBar(
+                currentPage: 'my_bookings',
+              ),
+            ),
 
             // Floating Action Button for Chatbot
             _buildFloatingChatbotButton(),
@@ -241,81 +225,211 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 88,
-        color: const Color(0xFFF2F2F2),
-        child: Column(
-          children: [
-            // Tab bar icons
-            Container(
-              height: 46.25,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 41.22,
-                vertical: 9.3,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavIcon(Icons.home, false),
-                  _buildNavIcon(Icons.search, false),
-                  _buildNavIcon(Icons.notifications, false),
-                  _buildNavIcon(Icons.settings, false),
-                ],
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Color(0xFF737373)),
+          const SizedBox(height: 16),
+          const Text(
+            'Error Loading Bookings',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF171717),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF737373),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _fetchAllBookings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF5B00),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-            // Tab bar labels
-            Container(
-              height: 35.01,
-              padding: const EdgeInsets.symmetric(horizontal: 37.69),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Home',
-                    style: TextStyle(
+            child: const Text(
+              'Retry',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyWidget() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 64,
+            color: Color(0xFF737373),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No Bookings Found',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF171717),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'You don\'t have any appointments yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF737373),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppointmentsList() {
+    return RefreshIndicator(
+      onRefresh: _fetchAllBookings,
+      color: const Color(0xFFFF5B00),
+      child: ListView.builder(
+        itemCount: _allAppointments.length,
+        itemBuilder: (context, index) {
+          final appointment = _allAppointments[index];
+          return _buildAppointmentCard(appointment);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE5E5E5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(17),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title and Status
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    appointment.serviceName,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF171717),
+                      height: 1.5,
                     ),
                   ),
-                  Text(
-                    'Search',
-                    style: TextStyle(
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  height: 24,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(appointment.status),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    appointment.status,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      height: 1.21,
                     ),
                   ),
-                  Text(
-                    'Notification',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+
+            // Reference Number
+            Text(
+              'Reference: ${appointment.referenceNumber}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 7),
+
+            // Submitted date
+            Text(
+              'Submitted: ${appointment.formattedCreatedDateTime}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 7),
+
+            // Appointment date
+            Text(
+              'Appointment: ${appointment.formattedAppointmentDateTime}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 7),
+
+            // Address
+            Text(
+              'Address: ${appointment.address}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF525252),
+                height: 1.21,
               ),
             ),
           ],
@@ -324,16 +438,19 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  Widget _buildNavIcon(IconData icon, bool isSelected) {
-    return SizedBox(
-      width: 23.33,
-      height: 26.65,
-      child: Icon(
-        icon,
-        size: 24,
-        color: isSelected ? const Color(0xFFFF5B00) : const Color(0xFF809FB8),
-      ),
-    );
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return const Color(0xFF279541);
+      case 'confirmed':
+        return const Color(0xFF2563EB);
+      case 'booked':
+        return const Color(0xFFFF5B00);
+      case 'cancelled':
+        return const Color(0xFFE53E3E);
+      default:
+        return const Color(0xFF737373);
+    }
   }
 
   Widget _buildFloatingChatbotButton() {
@@ -369,7 +486,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'My Bookings');
                 },
               );
             },

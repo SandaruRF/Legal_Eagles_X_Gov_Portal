@@ -16,6 +16,8 @@ router = APIRouter(
     tags=["Citizens"]
 )
 
+
+
 @router.post("/register", response_model=citizen_schema.Citizen)
 async def register_citizen(
     citizen_in: citizen_schema.CitizenCreate,

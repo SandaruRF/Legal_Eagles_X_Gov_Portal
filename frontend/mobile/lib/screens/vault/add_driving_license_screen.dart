@@ -455,7 +455,9 @@ class _AddDrivingLicenseScreenState extends State<AddDrivingLicenseScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(
+                    currentPage: 'Add Driving License',
+                  );
                 },
               );
             },

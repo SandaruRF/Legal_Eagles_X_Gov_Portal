@@ -228,6 +228,8 @@ const AdminManagement = ({ departmentId }) => {
         if (department && department.department_id === deptId) {
             return department.name;
         }
+
+        return  "Loading...";
     };
 
     if (user?.role !== "Head") {

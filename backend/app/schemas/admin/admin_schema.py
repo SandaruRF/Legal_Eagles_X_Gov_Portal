@@ -37,3 +37,6 @@ class Admin(AdminBase):
     class Config:
         from_attributes = True
 
+class FormTemplateRequest(BaseModel):
+    form_name: str
+    form_template: dict

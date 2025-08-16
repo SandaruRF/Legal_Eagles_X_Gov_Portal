@@ -30,4 +30,3 @@ class FilledFormCreate(BaseModel):
 
 class SubmitFormRequest(BaseModel):
     form_data: Dict[str, Any]
-    citizen_id: str 

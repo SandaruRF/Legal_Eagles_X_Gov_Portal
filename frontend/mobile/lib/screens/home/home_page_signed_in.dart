@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
+import '../../providers/user_provider.dart';
 
-class HomePageSignedIn extends StatefulWidget {
+class HomePageSignedIn extends ConsumerStatefulWidget {
   const HomePageSignedIn({super.key});
 
   @override
-  State<HomePageSignedIn> createState() => _HomePageSignedInState();
+  ConsumerState<HomePageSignedIn> createState() => _HomePageSignedInState();
 }
 
-class _HomePageSignedInState extends State<HomePageSignedIn> {
+class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user profile when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userProvider.notifier).fetchUserProfile();
+    });
+  }
+
   void _navigateToChat(String question) {
     // Navigate directly to chat interface with the question
     Navigator.pushNamed(context, '/chat_interface', arguments: question);
@@ -39,12 +51,11 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
     }
   }
 
-  void _navigateToSettings() {
-    Navigator.pushNamed(context, '/settings');
-  }
-
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userProvider);
+    final user = userState.user;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: Column(
@@ -374,10 +385,10 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Column(
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Digital Identity Card',
                                     style: TextStyle(
                                       fontFamily: 'Inter',
@@ -387,16 +398,18 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                                       height: 1.33,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    'Name of the Card',
-                                    style: TextStyle(
+                                    user?.fullName ?? 'Loading...',
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.white,
                                       height: 1.56,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -419,14 +432,14 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                           const Spacer(),
 
                           // Bottom section with details
-                          const Row(
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Valid Until',
+                                  const Text(
+                                    'Created',
                                     style: TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 12,
@@ -436,8 +449,13 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                                     ),
                                   ),
                                   Text(
-                                    '12/2030',
-                                    style: TextStyle(
+                                    user?.createdAt != null
+                                        ? () {
+                                          final date = user!.createdAt!;
+                                          return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                                        }()
+                                        : 'Loading...',
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
@@ -450,8 +468,8 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    'Citizen ID',
+                                  const Text(
+                                    'NIC Number',
                                     style: TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 12,
@@ -461,8 +479,8 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                                     ),
                                   ),
                                   Text(
-                                    '199812345678',
-                                    style: TextStyle(
+                                    user?.nicNo ?? 'Loading...',
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -613,46 +631,7 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: Container(
-        height: 82,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF2F2F2),
-          border: Border(top: BorderSide(color: Color(0xFFE5E5E5), width: 1)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(
-              icon: Icons.home,
-              label: 'Home',
-              isSelected: true,
-              onTap: () {},
-            ),
-            _buildNavItem(
-              icon: Icons.search,
-              label: 'Search',
-              isSelected: false,
-              onTap: () {
-                Navigator.pushNamed(context, '/search');
-              },
-            ),
-            _buildNavItem(
-              icon: Icons.notifications,
-              label: 'Notification',
-              isSelected: false,
-              onTap: () {
-                Navigator.pushNamed(context, '/notifications');
-              },
-            ),
-            _buildNavItem(
-              icon: Icons.settings,
-              label: 'Settings',
-              isSelected: false,
-              onTap: _navigateToSettings,
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const CustomBottomNavigationBar(currentPage: 'home'),
 
       // Floating Action Button
       floatingActionButton: Container(
@@ -684,7 +663,7 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'Home');
                 },
               );
             },
@@ -817,42 +796,6 @@ class _HomePageSignedInState extends State<HomePageSignedIn> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color:
-                isSelected ? const Color(0xFFFF5B00) : const Color(0xFF85A3BB),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color:
-                  isSelected
-                      ? const Color(0xFFFF5B00)
-                      : const Color(0xFF85A3BB),
-              height: 1.57,
-            ),
-          ),
-        ],
       ),
     );
   }

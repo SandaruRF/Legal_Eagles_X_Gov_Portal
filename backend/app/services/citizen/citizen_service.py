@@ -1,5 +1,5 @@
 from app.schemas.citizen.filled_form_schema import FilledFormCreate
-from app.schemas.citizen.appointment_schema import AppointmentSlot, Officer, AppointmentBookingRequest, AppointmentBookingResponse, AppointmentListItem
+from app.schemas.citizen.appointment_schema import AppointmentBookingRequest
 from app.core.database import db
 from prisma.enums import AppointmentStatus
 from datetime import datetime
@@ -10,6 +10,7 @@ import os
 import uuid
 import shutil
 
+
 async def get_form_template(form_id: str):
     form = await db.formtemplate.find_unique(where={"form_id": form_id})
     if not form:
@@ -17,7 +18,7 @@ async def get_form_template(form_id: str):
     return {
         "form_id": form.form_id,
         "name": form.form_name,
-        "form_template": form.template_url 
+        "form_template": form.form_template 
     }
 
 async def fill_passport_pdf(form_data, input_pdf, output_pdf):
@@ -222,4 +223,3 @@ async def get_user_appointments(status: str, citizen_id: str):
             "address": address
         })
     return result
-
