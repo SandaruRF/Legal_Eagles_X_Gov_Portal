@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../models/appointment.dart';
 import '../../core/services/appointments_service.dart';
+import '../../core/services/token_storage_service.dart';
+import '../../core/config/environment_config.dart';
 
 class PastBookingsScreen extends StatefulWidget {
   const PastBookingsScreen({super.key});
@@ -51,6 +55,178 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _submitReview(String appointmentId, int rating, String comment) async {
+    try {
+      final authHeader = await TokenStorageService.getAuthorizationHeader();
+      final uri = Uri.parse('${EnvironmentConfig.baseUrl}/api/citizen/feedback/citizen/feedback/submit');
+      
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (authHeader != null) 'Authorization': authHeader,
+        },
+        body: jsonEncode({
+          'appointment_id': appointmentId,
+          'rating': rating,
+          'comment': comment,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Review submitted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to submit review: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit review: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showReviewDialog(Appointment appointment) {
+    int selectedRating = 5;
+    String comment = '';
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text(
+                'Rate Your Experience',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Service: ${appointment.serviceName}',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF525252),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Rating:',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedRating = index + 1;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Icon(
+                              index < selectedRating ? Icons.star : Icons.star_border,
+                              color: const Color(0xFFFF5B00),
+                              size: 32,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Comment (Optional):',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Share your experience...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFFF5B00)),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        comment = value;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: Color(0xFF525252),
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _submitReview(appointment.appointmentId, selectedRating, comment);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5B00),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    'Submit Review',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -447,6 +623,37 @@ class _PastBookingsScreenState extends State<PastBookingsScreen> {
                 fontWeight: FontWeight.w400,
                 color: Color(0xFF525252),
                 height: 1.21,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Review Button
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: () => _showReviewDialog(appointment),
+                icon: const Icon(
+                  Icons.star_border,
+                  size: 16,
+                  color: Color(0xFFFF5B00),
+                ),
+                label: const Text(
+                  'Review',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFFF5B00),
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFFF5B00)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: const Size(0, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
               ),
             ),
           ],
