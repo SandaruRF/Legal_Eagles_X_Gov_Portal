@@ -12,7 +12,7 @@ router = APIRouter(
     tags=["Appointments"]
 )
 
-@router.get("/slots")
+@router.get("/slots/{service_id}/{location_id}")
 async def get_available_slots_endpoint(
     service_id: str,
     location_id: str,

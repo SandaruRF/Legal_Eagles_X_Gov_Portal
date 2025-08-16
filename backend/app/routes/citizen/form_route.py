@@ -42,8 +42,8 @@ async def submit_form_application(
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
         # Get form template to check template_url
-        form_template = await get_form_template(form_id)
-        template_url = form_template.get("template_url") if form_template else None
+        form = await db.formtemplate.find_unique(where={"form_id": form_id})
+        template_url = form.template_url if form else None
 
         key_mapping = {
             "Surname": "Surname1",

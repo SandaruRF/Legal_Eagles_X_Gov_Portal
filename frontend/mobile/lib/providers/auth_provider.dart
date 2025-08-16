@@ -160,7 +160,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
       );
 
-      if (response.success) {
+      if (response.success && response.data != null) {
+        // Save the authentication token to persistent storage
+        final loginData = response.data!;
+        await TokenStorageService.saveToken(
+          loginData.accessToken,
+          'Bearer', // Assuming Bearer token type
+        );
+
         // Get user profile after successful login
         final profileResponse = await _authService.getUserProfile();
 
@@ -314,7 +321,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Logout user
-  void logout() {
+  Future<void> logout() async {
+    await TokenStorageService.clearToken();
     _authService.logout();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
@@ -327,6 +335,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await _authService.deleteAccount();
 
       if (response.success) {
+        await TokenStorageService.clearToken();
         state = const AuthState(status: AuthStatus.unauthenticated);
       } else {
         state = state.copyWith(

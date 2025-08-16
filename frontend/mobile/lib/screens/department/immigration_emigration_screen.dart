@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../forms/dynamic_form_screen.dart';
 
 class ImmigrationEmigrationScreen extends StatefulWidget {
   const ImmigrationEmigrationScreen({super.key});
@@ -175,44 +176,58 @@ class _ImmigrationEmigrationScreenState
   }
 
   Widget _buildMainServiceCard() {
-    return Container(
-      width: double.infinity,
-      height: 90,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E5E5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 4,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => const DynamicFormScreen(
+                  formId: 'cmecukyjl000157mhnb9tci62',
+                  formTitle: 'Passport Application',
+                ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: _iconContainer(
-              size: 48,
-              imagePath: 'assets/images/passport_application_icon.png',
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E5E5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 4,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: 16),
-              child: Text(
-                'Reserve a date to submit a passport application',
-                style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: _iconContainer(
+                size: 48,
+                imagePath: 'assets/images/passport_application_icon.png',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _arrowChip(),
-          ),
-        ],
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: Text(
+                  'Reserve a date to submit a passport application',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _arrowChip(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -304,44 +319,58 @@ class _ImmigrationEmigrationScreenState
   }
 
   Widget _buildApplyPassportCard() {
-    return Container(
-      width: double.infinity,
-      height: 90,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E5E5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 4,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => const DynamicFormScreen(
+                  formId: 'cmecukyjl000157mhnb9tci62',
+                  formTitle: 'Apply Passport Online',
+                ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: _iconContainer(
-              size: 45,
-              imagePath: 'assets/images/apply_passport_icon.png',
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E5E5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 4,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: 16),
-              child: Text(
-                'Apply Passport online',
-                style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: _iconContainer(
+                size: 45,
+                imagePath: 'assets/images/apply_passport_icon.png',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _arrowChip(),
-          ),
-        ],
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: Text(
+                  'Apply Passport online',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF171717)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _arrowChip(),
+            ),
+          ],
+        ),
       ),
     );
   }
