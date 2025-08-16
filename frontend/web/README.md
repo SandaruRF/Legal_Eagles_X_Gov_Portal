@@ -1,70 +1,146 @@
-# Getting Started with Create React App
+# Gov Portal Admin Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+<div align="center">
 
-## Available Scripts
 
-In the project directory, you can run:
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Modern Government Services Administrative Dashboard**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+[🌐 Live Dashboard](https://anuhasip-gov-portal-admin-dashboard.hf.space/) -  [🚀 Backend API](https://anuhasip-gov-portal-backend.hf.space/docs#) -  [🐛 Issues](https://github.com/SandaruRF/Gov-Portal/issues)
 
-### `npm test`
+</div>
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+***
 
-### `npm run build`
+## Overview
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+React-based administrative dashboard for government officials to manage services, appointments, users, and analytics. Provides comprehensive tools for service configuration, citizen management, and system monitoring.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ✨ Key Features
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **📊 Analytics Dashboard**: Real-time insights, usage statistics, and performance metrics
+- **⚙️ Service Management**: Create, update, and configure government services and forms
+- **👥 User Management**: Oversee citizen accounts, KYC verifications, and admin roles
+- **📅 Appointment Management**: Handle scheduling, confirmations, and citizen appointments
+- **📈 Reports \& Analytics**: Generate detailed reports and system usage analytics
+- **🔐 Role-based Access**: Secure authentication with granular permission controls
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🚀 Quick Start
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Access Live Dashboard
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+# Visit the deployed dashboard
+https://anuhasip-gov-portal-admin-dashboard.hf.space/
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Learn More
+### Run from Source
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+# Clone repository
+git clone https://github.com/SandaruRF/Gov-Portal.git
+cd Gov-Portal/frontend/web
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Install dependencies
+npm install
 
-### Code Splitting
+# Start development server
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Analyzing the Bundle Size
+## 🗂️ Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+web/
+├── public/                     # Static assets
+│   ├── favicon.ico            # App icon
+│   ├── gov-portal-logo.png    # Gov Portal logo
+│   ├── index.html             # Main HTML template
+│   └── manifest.json          # PWA manifest
+├── src/                       # Source code
+│   ├── components/            # Reusable UI components
+│   ├── config/                # Configuration files
+│   ├── contexts/              # React context providers
+│   ├── images/                # Image assets
+│   ├── services/              # API service integrations
+│   ├── styles/                # CSS styling
+│   ├── App.js                 # Main App component
+│   └── index.js               # React entry point
+├── Dockerfile                 # Docker configuration
+├── nginx.conf                 # Nginx server config
+├── package.json               # Dependencies & scripts
+└── README.md                  # Documentation
+```
 
-### Making a Progressive Web App
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 📋 Prerequisites
 
-### Advanced Configuration
+- **Node.js 16+** ([Download Node.js](https://nodejs.org/))
+- **npm** or **yarn** package manager
+- **Modern web browser** (Chrome, Firefox, Safari, Edge)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-### Deployment
+## 🛠️ Development
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```bash
+# Install dependencies
+npm install
 
-### `npm run build` fails to minify
+# Start development server
+npm start                      # Runs on http://localhost:3000
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# Build for production
+npm run build
+
+# Run tests
+npm test
+
+# Deploy with Docker
+docker build -t gov-portal-dashboard .
+docker run -p 3000:80 gov-portal-dashboard
+```
+
+
+## ⚙️ Environment Configuration
+
+```bash
+# Create environment file
+cp .env.example .env
+
+# Edit with your API endpoints
+REACT_APP_API_BASE_URL=https://your-backend-api.com
+REACT_APP_ENVIRONMENT=production
+```
+
+
+## 🧪 Available Scripts
+
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run test suite
+- `npm run eject` - Eject from Create React App
+
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/admin-feature`)
+3. Commit your changes (`git commit -m 'Add admin feature'`)
+4. Push to branch (`git push origin feature/admin-feature`)
+5. Open a Pull Request
+
+***
+
+<div align="center">
+
+**⭐ Star this repository if you find it helpful!**
+
+*Last Updated: August 2025 | Version 1.0.0*
+
+</div>
+<div align="center">⁂</div>
+
