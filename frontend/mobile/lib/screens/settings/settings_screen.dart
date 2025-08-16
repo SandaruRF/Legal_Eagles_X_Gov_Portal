@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../core/services/token_storage_service.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isDarkMode = false;
 
   void _navigateToChangePassword() {
@@ -71,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // Change Password Card
                           _buildSettingsCard(
                             icon: Icons.lock_outline,
-                            title: 'Change Password',
+                            title: AppLocalizations.of(context)!.changePassword,
                             onTap: _navigateToChangePassword,
                             showArrow: true,
                           ),

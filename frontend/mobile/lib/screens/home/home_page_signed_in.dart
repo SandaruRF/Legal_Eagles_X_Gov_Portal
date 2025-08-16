@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../providers/user_provider.dart';
@@ -101,9 +102,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Gov Portal',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.govPortal,
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -220,13 +221,15 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                               ],
                             ),
                             const SizedBox(width: 14),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Government Assistant',
-                                    style: TextStyle(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.governmentAssistant,
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
@@ -234,8 +237,8 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                                     ),
                                   ),
                                   Text(
-                                    'Ask me anything about government services',
-                                    style: TextStyle(
+                                    AppLocalizations.of(context)!.askMeAnything,
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
@@ -258,9 +261,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                             color: const Color(0xFFFAFAFA),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'Hello! How can I help you with government services today?',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocalizations.of(context)!.helloGreeting,
+                            style: const TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
@@ -295,11 +298,13 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                                       color: const Color(0xFFD4D4D4),
                                     ),
                                   ),
-                                  child: const Align(
+                                  child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      'Type your question...',
-                                      style: TextStyle(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.typeYourQuestion,
+                                      style: const TextStyle(
                                         fontFamily: 'Inter',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w400,
@@ -342,9 +347,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                   const SizedBox(height: 18),
 
                   // Digital Vault section
-                  const Text(
-                    'Digital Vault',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.digitalVault,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 18,
                       fontWeight: FontWeight.w400,
@@ -388,9 +393,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Digital Identity Card',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.digitalIdentityCard,
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 12,
                                       fontWeight: FontWeight.w400,
@@ -438,9 +445,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Created',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)!.created,
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 12,
                                       fontWeight: FontWeight.w400,
@@ -468,9 +475,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  const Text(
-                                    'NIC Number',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)!.nicNumber,
+                                    style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -503,9 +510,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Government Sectors',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.governmentSectors,
+                        style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 18,
                           fontWeight: FontWeight.w400,
@@ -519,9 +526,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                         },
                         child: Row(
                           children: [
-                            const Text(
-                              'See More',
-                              style: TextStyle(
+                            Text(
+                              AppLocalizations.of(context)!.seeMore,
+                              style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
@@ -548,16 +555,18 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                     children: [
                       Expanded(
                         child: _buildSectorCard(
-                          'Public Administration',
-                          'NIC, Passport, Birth & Death Certificates, Land Records',
+                          AppLocalizations.of(context)!.publicAdministration,
+                          AppLocalizations.of(
+                            context,
+                          )!.publicAdministrationDesc,
                           'assets/images/home_public_admin.png',
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildSectorCard(
-                          'Public Security',
-                          'Police Services, Crime Reports, Emergency Services',
+                          AppLocalizations.of(context)!.publicSecurity,
+                          AppLocalizations.of(context)!.publicSecurityDesc,
                           'assets/images/home_public_security.png',
                         ),
                       ),
@@ -570,16 +579,16 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                     children: [
                       Expanded(
                         child: _buildSectorCard(
-                          'Finance & Planning',
-                          'Business Registration, Job Portal, EPF/ETF Services',
+                          AppLocalizations.of(context)!.financeAndPlanning,
+                          AppLocalizations.of(context)!.financeAndPlanningDesc,
                           'assets/images/home_finance_planning.png',
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildSectorCard(
-                          'Health',
-                          'Medical Records, Hospital Appointments, Public Health Announcements',
+                          AppLocalizations.of(context)!.health,
+                          AppLocalizations.of(context)!.healthDesc,
                           'assets/images/home_health.png',
                         ),
                       ),
@@ -589,9 +598,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                   const SizedBox(height: 18),
 
                   // Recently Asked Questions section
-                  const Text(
-                    'Recently Asked Questions',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.recentlyAskedQuestions,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 18,
                       fontWeight: FontWeight.w400,

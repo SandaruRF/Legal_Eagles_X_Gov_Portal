@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectLanguage.
   ///
   /// In en, this message translates to:
-  /// **'Select Language!'**
+  /// **'Select Language'**
   String get selectLanguage;
 
   /// No description provided for @getStarted.
@@ -117,6 +117,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gov Portal'**
   String get govPortal;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePassword;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// No description provided for @deactivateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate Account'**
+  String get deactivateAccount;
+
+  /// No description provided for @governmentAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Government Assistant'**
+  String get governmentAssistant;
+
+  /// No description provided for @askMeAnything.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask me anything about government services'**
+  String get askMeAnything;
+
+  /// No description provided for @helloGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello! How can I help you with government services today?'**
+  String get helloGreeting;
+
+  /// No description provided for @typeYourQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your question...'**
+  String get typeYourQuestion;
+
+  /// No description provided for @digitalVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Vault'**
+  String get digitalVault;
+
+  /// No description provided for @digitalIdentityCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Identity Card'**
+  String get digitalIdentityCard;
+
+  /// No description provided for @created.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get created;
+
+  /// No description provided for @nicNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'NIC Number'**
+  String get nicNumber;
+
+  /// No description provided for @governmentSectors.
+  ///
+  /// In en, this message translates to:
+  /// **'Government Sectors'**
+  String get governmentSectors;
+
+  /// No description provided for @seeMore.
+  ///
+  /// In en, this message translates to:
+  /// **'See More'**
+  String get seeMore;
+
+  /// No description provided for @publicAdministration.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Administration'**
+  String get publicAdministration;
+
+  /// No description provided for @publicAdministrationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'NIC, Passport, Birth & Death Certificates, Land Records'**
+  String get publicAdministrationDesc;
+
+  /// No description provided for @publicSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Security'**
+  String get publicSecurity;
+
+  /// No description provided for @publicSecurityDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Police Services, Crime Reports, Emergency Services'**
+  String get publicSecurityDesc;
+
+  /// No description provided for @financeAndPlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance & Planning'**
+  String get financeAndPlanning;
+
+  /// No description provided for @financeAndPlanningDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Registration, Job Portal, EPF/ETF Services'**
+  String get financeAndPlanningDesc;
+
+  /// No description provided for @health.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get health;
+
+  /// No description provided for @healthDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical Records, Hospital Appointments, Public Health Announcements'**
+  String get healthDesc;
+
+  /// No description provided for @recentlyAskedQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Asked Questions'**
+  String get recentlyAskedQuestions;
 }
 
 class _AppLocalizationsDelegate
