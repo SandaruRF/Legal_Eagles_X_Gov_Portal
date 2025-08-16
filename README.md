@@ -440,7 +440,7 @@ copies or substantial portions of the Software.
 
 ## 👨💻 Authors
 
-<div align="center">
+<div>
 
 ### **Development Team**
 
