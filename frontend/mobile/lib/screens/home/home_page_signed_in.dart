@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../providers/user_provider.dart';
@@ -56,15 +57,23 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
   Widget build(BuildContext context) {
     final userState = ref.watch(userProvider);
     final user = userState.user;
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+
+    final backgroundColor =
+        isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFFAFAFA);
+    final headerColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF171717);
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E5E5);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
           // Status bar area
           Container(
             height: MediaQuery.of(context).padding.top,
-            color: Colors.white,
+            color: headerColor,
           ),
 
           // Header
@@ -72,11 +81,9 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
             width: double.infinity,
             height: 104,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFE5E5E5), width: 1),
-              ),
+            decoration: BoxDecoration(
+              color: headerColor,
+              border: Border(bottom: BorderSide(color: borderColor, width: 1)),
             ),
             child: Column(
               children: [
@@ -104,11 +111,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                         const SizedBox(width: 12),
                         Text(
                           AppLocalizations.of(context)!.govPortal,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF171717),
+                            color: textColor,
                           ),
                         ),
                       ],
@@ -171,9 +178,10 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color:
+                          isDarkMode ? const Color(0xFF374151) : Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE5E5E5)),
+                      border: Border.all(color: borderColor),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,20 +237,23 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                                     AppLocalizations.of(
                                       context,
                                     )!.governmentAssistant,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
-                                      color: Color(0xFF171717),
+                                      color: textColor,
                                     ),
                                   ),
                                   Text(
                                     AppLocalizations.of(context)!.askMeAnything,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
-                                      color: Color(0xFF737373),
+                                      color:
+                                          isDarkMode
+                                              ? const Color(0xFF9CA3AF)
+                                              : const Color(0xFF737373),
                                       height: 1.43,
                                     ),
                                   ),
@@ -258,16 +269,22 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFAFAFA),
+                            color:
+                                isDarkMode
+                                    ? const Color(0xFF4B5563)
+                                    : const Color(0xFFFAFAFA),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             AppLocalizations.of(context)!.helloGreeting,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFF404040),
+                              color:
+                                  isDarkMode
+                                      ? const Color(0xFFE5E7EB)
+                                      : const Color(0xFF404040),
                               height: 1.21,
                             ),
                           ),
@@ -292,10 +309,16 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                                     horizontal: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color:
+                                        isDarkMode
+                                            ? const Color(0xFF4B5563)
+                                            : Colors.white,
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: const Color(0xFFD4D4D4),
+                                      color:
+                                          isDarkMode
+                                              ? const Color(0xFF6B7280)
+                                              : const Color(0xFFD4D4D4),
                                     ),
                                   ),
                                   child: Align(
@@ -304,11 +327,14 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                                       AppLocalizations.of(
                                         context,
                                       )!.typeYourQuestion,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'Inter',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w400,
-                                        color: Color(0xFFADAEBC),
+                                        color:
+                                            isDarkMode
+                                                ? const Color(0xFF9CA3AF)
+                                                : const Color(0xFFADAEBC),
                                         height: 1.43,
                                       ),
                                     ),
@@ -349,11 +375,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                   // Digital Vault section
                   Text(
                     AppLocalizations.of(context)!.digitalVault,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 18,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF171717),
+                      color: textColor,
                       height: 1.56,
                     ),
                   ),
@@ -512,11 +538,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                     children: [
                       Text(
                         AppLocalizations.of(context)!.governmentSectors,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 18,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF171717),
+                          color: textColor,
                           height: 1.56,
                         ),
                       ),
@@ -528,19 +554,25 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                           children: [
                             Text(
                               AppLocalizations.of(context)!.seeMore,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
-                                color: Color(0xFF525252),
+                                color:
+                                    isDarkMode
+                                        ? const Color(0xFF9CA3AF)
+                                        : const Color(0xFF525252),
                                 height: 1.43,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_ios,
                               size: 12,
-                              color: Color(0xFF525252),
+                              color:
+                                  isDarkMode
+                                      ? const Color(0xFF9CA3AF)
+                                      : const Color(0xFF525252),
                             ),
                           ],
                         ),
@@ -600,11 +632,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                   // Recently Asked Questions section
                   Text(
                     AppLocalizations.of(context)!.recentlyAskedQuestions,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 18,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF171717),
+                      color: textColor,
                       height: 1.21,
                     ),
                   ),
@@ -691,15 +723,24 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
   }
 
   Widget _buildQuestionCard(String question, String time) {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final cardColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E5E5);
+    final textColor =
+        isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF404040);
+    final secondaryTextColor =
+        isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF737373);
+
     return GestureDetector(
       onTap: () => _navigateToChat(question),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E5E5)),
+          border: Border.all(color: borderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,11 +751,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
                 Expanded(
                   child: Text(
                     question,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF404040),
+                      color: textColor,
                       height: 1.21,
                     ),
                   ),
@@ -729,11 +770,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
             const SizedBox(height: 4),
             Text(
               time,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
-                color: Color(0xFF737373),
+                color: secondaryTextColor,
                 height: 1.21,
               ),
             ),
@@ -744,15 +785,24 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
   }
 
   Widget _buildSectorCard(String title, String description, String imagePath) {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final cardColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E5E5);
+    final titleColor =
+        isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF171717);
+    final descriptionColor =
+        isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF737373);
+
     return GestureDetector(
       onTap: () => _navigateToSector(title),
       child: Container(
         height: 150,
         padding: const EdgeInsets.all(17),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E5E5)),
+          border: Border.all(color: borderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -778,11 +828,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
             const SizedBox(height: 9),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: Color(0xFF171717),
+                color: titleColor,
                 height: 1.21,
               ),
               textAlign: TextAlign.center,
@@ -791,11 +841,11 @@ class _HomePageSignedInState extends ConsumerState<HomePageSignedIn> {
             Expanded(
               child: Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 10,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF737373),
+                  color: descriptionColor,
                   height: 1.21,
                 ),
                 textAlign: TextAlign.center,
