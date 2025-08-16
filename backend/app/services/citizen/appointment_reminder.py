@@ -11,7 +11,7 @@ CHECK_INTERVAL_SECONDS = 60  # check every minute
 
 async def appointment_reminder_worker():
     """Background worker to send appointment reminders 24 hours before."""
-    db: Prisma = await get_db()
+    db: Prisma = get_db()
     while True:
         now = datetime.now()
         reminder_time = datetime.now() + timedelta(hours=24)

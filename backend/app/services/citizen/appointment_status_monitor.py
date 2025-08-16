@@ -5,12 +5,14 @@ from app.core.database import get_db
 from app.services.citizen.notification_repository import create_notification
 from app.schemas.citizen.notification import NotificationCreate
 from prisma.enums import NotificationType, NotificationPriority, AppointmentStatus
+import logging
 
+logger = logging.getLogger(__name__)
 CHECK_INTERVAL_SECONDS = 30  # Check every 30 seconds
 
 async def appointment_status_monitor():
     """Monitors Appointment table for status changes and sends notifications"""
-    db: Prisma = await get_db()
+    db: Prisma = get_db()
     last_checked = datetime.now()
     
     while True:
