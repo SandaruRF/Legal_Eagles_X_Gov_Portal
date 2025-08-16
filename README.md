@@ -471,5 +471,5 @@ copies or substantial portions of the Software.
 
 </div>
 
-<div style="text-align: center">⁂</div>
+<div align="center">⁂</div>
 
