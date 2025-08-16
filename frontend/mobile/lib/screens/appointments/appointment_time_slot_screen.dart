@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/services/http_client_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../core/services/token_storage_service.dart';
 import '../../core/config/environment_config.dart';
+import 'appointment_document_upload.dart';
 
 class AppointmentTimeSlotScreen extends ConsumerStatefulWidget {
   final String serviceId;
@@ -28,7 +31,6 @@ class _AppointmentTimeSlotScreenState
   String? error;
   String? selectedDate;
   String? selectedSlotId;
-  final HttpClientService _httpClient = HttpClientService();
 
   @override
   void initState() {
@@ -37,46 +39,62 @@ class _AppointmentTimeSlotScreenState
   }
 
   Future<void> _loadAvailableSlots() async {
+    print('DEBUG: _loadAvailableSlots called');
     try {
       setState(() {
         isLoading = true;
         error = null;
       });
 
-      final response = await _httpClient.get(
-        EnvironmentConfig.appointmentSlots,
-        queryParameters: {
-          'service_id': widget.serviceId,
-          'location_id': widget.locationId,
+      // Use raw HTTP client instead of HttpClientService
+      final uri = Uri.parse('${EnvironmentConfig.baseUrl}${EnvironmentConfig.appointmentSlots}/${widget.serviceId}/${widget.locationId}');
+      final authHeader = await TokenStorageService.getAuthorizationHeader();
+      
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          if (authHeader != null) 'Authorization': authHeader,
         },
       );
 
-      if (response.success && response.data != null) {
-        // Group slots by date
-        final Map<String, List<Map<String, dynamic>>> groupedSlots = {};
+      print('DEBUG: HTTP response status: ${response.statusCode}');
+      print('DEBUG: HTTP response body: ${response.body}');
 
-        if (response.data is List) {
-          for (var slot in response.data) {
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+        print('DEBUG: Parsed response data: $responseData');
+
+        if (responseData['status'] == 'success' && responseData['available_slots'] != null) {
+          // Group slots by date
+          final Map<String, List<Map<String, dynamic>>> groupedSlots = {};
+
+          final List<dynamic> slotsList = responseData['available_slots'];
+          for (var slot in slotsList) {
             final date = slot['date'] ?? '';
             if (!groupedSlots.containsKey(date)) {
               groupedSlots[date] = [];
             }
             groupedSlots[date]!.add(Map<String, dynamic>.from(slot));
           }
-        }
 
-        setState(() {
-          availableSlots = groupedSlots;
-          isLoading = false;
-          // Select first available date
-          if (groupedSlots.isNotEmpty) {
-            selectedDate = groupedSlots.keys.first;
-          }
-        });
+          print('DEBUG: Grouped slots: $groupedSlots');
+          setState(() {
+            availableSlots = groupedSlots;
+            isLoading = false;
+            // Select first available date
+            if (groupedSlots.isNotEmpty) {
+              selectedDate = groupedSlots.keys.first;
+            }
+          });
+        } else {
+          throw Exception('Invalid response format or no available slots');
+        }
       } else {
-        throw Exception(response.message);
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
+      print('DEBUG: Exception in _loadAvailableSlots: $e');
       setState(() {
         error = e.toString();
         isLoading = false;
@@ -87,132 +105,107 @@ class _AppointmentTimeSlotScreenState
   Future<void> _bookAppointment() async {
     if (selectedSlotId == null || selectedDate == null) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B00)),
-                ),
-                SizedBox(height: 16),
-                Text('Booking appointment...'),
-              ],
-            ),
-          ),
-    );
-
+    // Navigate to document upload page instead of booking directly
     try {
-      final bookingData = {
-        'service_id': widget.serviceId,
-        'location_id': widget.locationId,
-        'slot_id': selectedSlotId,
-        'date': selectedDate,
-        'citizen_id': '12345', // TODO: Get from user context
-        'form_data': widget.formData,
-      };
-
-      final response = await _httpClient.post(
-        EnvironmentConfig.appointmentBook,
-        body: bookingData,
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AppointmentDocumentUploadScreen(
+            serviceId: widget.serviceId,
+            locationId: widget.locationId,
+            slotId: selectedSlotId!,
+            selectedDate: selectedDate!,
+            formData: widget.formData,
+          ),
+        ),
       );
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-
-        if (response.success) {
-          _showSuccessDialog(response.data);
-        } else {
-          throw Exception(response.message);
-        }
-      }
+      // If the upload was successful, the document upload screen will handle navigation
+      // No need to do anything here as the success dialog in upload screen handles it
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to book appointment: $e'),
-            backgroundColor: Colors.red,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to navigate to document upload: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildTimeSlots(List<Map<String, dynamic>> slots) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 2.5,
+      ),
+      itemCount: slots.length,
+      itemBuilder: (context, index) {
+        final slot = slots[index];
+        final slotId = slot['slot_id'].toString();
+        final isSelected = selectedSlotId == slotId;
+        final isAvailable = slot['available'] == true;
+
+        return GestureDetector(
+          onTap: isAvailable
+              ? () {
+                  setState(() {
+                    selectedSlotId = slotId;
+                  });
+                }
+              : null,
+          child: Container(
+            decoration: BoxDecoration(
+              color: !isAvailable
+                  ? Colors.grey.shade200
+                  : isSelected
+                      ? const Color(0xFFFF5B00)
+                      : Colors.white,
+              border: Border.all(
+                color: !isAvailable
+                    ? Colors.grey.shade400
+                    : isSelected
+                        ? const Color(0xFFFF5B00)
+                        : Colors.grey.shade300,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    slot['time'] ?? '',
+                    style: TextStyle(
+                      color: !isAvailable
+                          ? Colors.grey
+                          : isSelected
+                              ? Colors.white
+                              : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (slot['officer'] != null && slot['officer']['name'] != null)
+                    Text(
+                      slot['officer']['name'],
+                      style: TextStyle(
+                        color: !isAvailable
+                            ? Colors.grey
+                            : isSelected
+                                ? Colors.white70
+                                : Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         );
-      }
-    }
-  }
-
-  void _showSuccessDialog(dynamic appointmentData) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 28),
-                SizedBox(width: 8),
-                Text('Appointment Booked!'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Your appointment has been successfully booked.'),
-                const SizedBox(height: 16),
-                if (appointmentData is Map<String, dynamic>) ...[
-                  if (appointmentData['appointment_id'] != null)
-                    Text(
-                      'Appointment ID: ${appointmentData['appointment_id']}',
-                    ),
-                  if (appointmentData['reference_number'] != null)
-                    Text('Reference: ${appointmentData['reference_number']}'),
-                  const SizedBox(height: 8),
-                  Text('Date: $selectedDate'),
-                  if (selectedSlotId != null) ...[
-                    Text('Time: ${_getSelectedSlotTime()}'),
-                  ],
-                ],
-                const SizedBox(height: 16),
-                const Text(
-                  'Please arrive 15 minutes before your scheduled time.',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close success dialog
-                  Navigator.popUntil(
-                    context,
-                    (route) => route.isFirst,
-                  ); // Go back to home
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+      },
     );
-  }
-
-  String _getSelectedSlotTime() {
-    if (selectedDate == null ||
-        selectedSlotId == null ||
-        availableSlots == null) {
-      return '';
-    }
-
-    final slots = availableSlots![selectedDate!];
-    if (slots != null) {
-      final selectedSlot = slots.firstWhere(
-        (slot) => slot['id'].toString() == selectedSlotId,
-        orElse: () => {},
-      );
-      return selectedSlot['time'] ?? '';
-    }
-    return '';
   }
 
   @override
@@ -239,7 +232,7 @@ class _AppointmentTimeSlotScreenState
                     ),
                   ),
                   child: const Text(
-                    'Book Appointment',
+                    'Continue to Upload Documents',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -377,69 +370,6 @@ class _AppointmentTimeSlotScreenState
                   ),
         ),
       ],
-    );
-  }
-
-  Widget _buildTimeSlots(List<Map<String, dynamic>> slots) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 2.5,
-      ),
-      itemCount: slots.length,
-      itemBuilder: (context, index) {
-        final slot = slots[index];
-        final slotId = slot['id'].toString();
-        final isSelected = selectedSlotId == slotId;
-        final isAvailable = slot['available'] == true;
-
-        return GestureDetector(
-          onTap:
-              isAvailable
-                  ? () {
-                    setState(() {
-                      selectedSlotId = slotId;
-                    });
-                  }
-                  : null,
-          child: Container(
-            decoration: BoxDecoration(
-              color:
-                  !isAvailable
-                      ? Colors.grey.shade200
-                      : isSelected
-                      ? const Color(0xFFFF5B00)
-                      : Colors.white,
-              border: Border.all(
-                color:
-                    !isAvailable
-                        ? Colors.grey.shade400
-                        : isSelected
-                        ? const Color(0xFFFF5B00)
-                        : Colors.grey.shade300,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                slot['time'] ?? '',
-                style: TextStyle(
-                  color:
-                      !isAvailable
-                          ? Colors.grey.shade600
-                          : isSelected
-                          ? Colors.white
-                          : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 

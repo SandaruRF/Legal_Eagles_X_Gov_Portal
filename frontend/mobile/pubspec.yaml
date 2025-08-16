@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   flutter_riverpod: ^2.4.10
   flutter_svg: ^2.0.10+1
   image_picker: ^1.0.7
@@ -26,6 +29,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
   assets:
     - assets/images/
     - assets/images/government_sectors/

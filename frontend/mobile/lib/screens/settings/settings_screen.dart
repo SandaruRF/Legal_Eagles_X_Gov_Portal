@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/chatbot_overlay.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../core/services/token_storage_service.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDarkMode = false;
-
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _navigateToChangePassword() {
     Navigator.pushNamed(context, '/change_password');
   }
@@ -47,8 +48,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final backgroundColor =
+        isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: backgroundColor,
       body: Stack(
         children: [
           SafeArea(
@@ -61,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Content
                 Expanded(
                   child: Container(
-                    color: const Color(0xFFF9FAFB),
+                    color: backgroundColor,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
@@ -71,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // Change Password Card
                           _buildSettingsCard(
                             icon: Icons.lock_outline,
-                            title: 'Change Password',
+                            title: AppLocalizations.of(context)!.changePassword,
                             onTap: _navigateToChangePassword,
                             showArrow: true,
                           ),
@@ -141,15 +146,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
     bool showArrow = false,
   }) {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final cardColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         height: 58,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: borderColor),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 17),
@@ -162,11 +173,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF1F2937),
+                    color: textColor,
                     height: 1.5,
                   ),
                 ),
@@ -186,15 +197,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLanguageCard() {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final cardColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final secondaryTextColor =
+        isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB);
+
     return GestureDetector(
       onTap: _navigateToLanguageSettings,
       child: Container(
         width: double.infinity,
         height: 58,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: borderColor),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 17),
@@ -204,26 +223,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Icon(Icons.language, size: 20, color: Color(0xFFFF5B00)),
               const SizedBox(width: 12),
               // Title
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Language',
+                  AppLocalizations.of(context)!.language,
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF1F2937),
+                    color: textColor,
                     height: 1.5,
                   ),
                 ),
               ),
               // Language text and arrow
-              const Text(
+              Text(
                 'English',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF6B7280),
+                  color: secondaryTextColor,
                   height: 1.5,
                 ),
               ),
@@ -241,13 +260,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDarkModeCard() {
+    final themeNotifier = ref.watch(themeProvider.notifier);
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final cardColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB);
+
     return Container(
       width: double.infinity,
       height: 58,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: borderColor),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 17),
@@ -261,14 +287,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(width: 12),
             // Title
-            const Expanded(
+            Expanded(
               child: Text(
-                'Dark Mode',
+                AppLocalizations.of(context)!.darkMode,
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF1F2937),
+                  color: textColor,
                   height: 1.5,
                 ),
               ),
@@ -276,16 +302,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Toggle Switch
             GestureDetector(
               onTap: () {
-                setState(() {
-                  _isDarkMode = !_isDarkMode;
-                });
+                themeNotifier.toggleTheme();
               },
               child: Container(
                 width: 44,
                 height: 24,
                 decoration: BoxDecoration(
                   color:
-                      _isDarkMode
+                      isDarkMode
                           ? const Color(0xFFFF5B00)
                           : const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(12),
@@ -293,9 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: AnimatedAlign(
                   duration: const Duration(milliseconds: 200),
                   alignment:
-                      _isDarkMode
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
+                      isDarkMode ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     width: 20,
                     height: 20,
@@ -320,10 +342,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
     final color =
         isDestructive ? const Color(0xFFEF4444) : const Color(0xFFFF5B00);
     final borderColor =
-        isDestructive ? const Color(0xFFFECACA) : const Color(0xFFE5E7EB);
+        isDestructive
+            ? const Color(0xFFFECACA)
+            : (isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB));
+    final cardColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
 
     return GestureDetector(
       onTap: onTap,
@@ -331,7 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: double.infinity,
         height: 58,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: borderColor),
         ),
@@ -500,12 +526,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildGovPortalHeader() {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final headerColor = isDarkMode ? const Color(0xFF374151) : Colors.white;
+    final borderColor =
+        isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E5E5);
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF171717);
+    final iconColor =
+        isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF525252);
+
     return Container(
       width: double.infinity,
       height: 104,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E5E5), width: 1)),
+      decoration: BoxDecoration(
+        color: headerColor,
+        border: Border(bottom: BorderSide(color: borderColor, width: 1)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
@@ -518,11 +552,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 24,
                 height: 24,
                 margin: const EdgeInsets.only(right: 20),
-                child: const Icon(
-                  Icons.arrow_back_ios,
-                  size: 18,
-                  color: Color(0xFF525252),
-                ),
+                child: Icon(Icons.arrow_back_ios, size: 18, color: iconColor),
               ),
             ),
 
@@ -544,13 +574,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Gov Portal',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF171717),
+                      color: textColor,
                       height: 1.5,
                     ),
                   ),

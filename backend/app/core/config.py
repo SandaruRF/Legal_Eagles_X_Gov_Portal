@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    EMAIL_ENABLED: bool = True
+    EMAIL_FROM: str
+    EMAIL_APP_PASSWORD: str
+    SMTP_SERVER: str
+    SMTP_PORT: int
+    FRONTEND_URL: str
+
     # ChromaDB Configuration
     CHROMADB_HOST: str = "localhost"
     CHROMADB_PORT: int = 8000
