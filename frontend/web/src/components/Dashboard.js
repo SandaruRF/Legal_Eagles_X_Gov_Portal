@@ -95,7 +95,7 @@ const Dashboard = () => {
             case "feedback":
                 return <Feedback departmentId={currentUser.department_id} />;
             case "service-management":
-                return <ServiceManagement departmentId={currentUser.department_id} />;
+                return <ServiceManagement departmentId={currentUser.department_id} department={department} />;
             case "admin-management":
                 return (
                     <AdminManagement departmentId={currentUser.department_id} />

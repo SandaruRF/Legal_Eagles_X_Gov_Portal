@@ -59,8 +59,8 @@ const ServiceForm = ({ data, onUpdate, onNext }) => {
             <input
               type="text"
               className="form-input"
-              value={data.name}
-              onChange={(e) => onUpdate({ ...data, name: e.target.value })}
+              value={data.serviceName || ''}
+              onChange={(e) => onUpdate({ ...data, serviceName: e.target.value })}
               placeholder="Enter service name"
               style={{
                 width: "100%",
@@ -123,37 +123,13 @@ const ServiceForm = ({ data, onUpdate, onNext }) => {
         </div>
 
         <div className="form-group">
-          <label>Processing Time (Days)</label>
+          <label>Form Name *</label>
           <input
-            type="number"
+            type="text"
             className="form-input"
-            value={data.processingTime || ''}
-            onChange={(e) => onUpdate({ ...data, processingTime: parseInt(e.target.value) })}
-            placeholder="Expected processing time in days"
-            min="1"
-            max="365"
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "2px solid #e9ecef",
-              borderRadius: "6px",
-              fontSize: "1rem",
-              transition: "all 0.2s ease",
-              background: "white",
-            }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Service Fee (LKR)</label>
-          <input
-            type="number"
-            className="form-input"
-            value={data.fee || ''}
-            onChange={(e) => onUpdate({ ...data, fee: parseFloat(e.target.value) })}
-            placeholder="Service fee in LKR (0 for free services)"
-            min="0"
-            step="0.01"
+            value={data.formName || ''}
+            onChange={(e) => onUpdate({ ...data, formName: e.target.value })}
+            placeholder="Enter form name"
             style={{
               width: "100%",
               padding: "0.75rem",
@@ -301,30 +277,32 @@ const ServiceForm = ({ data, onUpdate, onNext }) => {
         <button 
           className="btn btn-primary"
           onClick={onNext}
-          disabled={!data.name || !data.description}
+          disabled={!data.serviceName || !data.description || !data.formName}
           style={{
             padding: "0.75rem 2rem",
-            backgroundColor: !data.name || !data.description ? "#ccc" : "var(--accent-green)",
+            backgroundColor: !data.serviceName || !data.description || !data.formName ? "#ccc" : "var(--accent-green)",
             color: "white",
             border: "none",
             borderRadius: "6px",
             fontSize: "1rem",
             fontWeight: "500",
-            cursor: !data.name || !data.description ? "not-allowed" : "pointer",
+            cursor: !data.serviceName || !data.description || !data.formName ? "not-allowed" : "pointer",
             transition: "all 0.2s ease",
             display: "flex",
             alignItems: "center",
             gap: "0.5rem",
           }}
           onMouseOver={(e) => {
-            if (!(!data.name || !data.description)) {
+            const isFormValid = data.formName && data.description && data.serviceName;
+            if (isFormValid) {
               e.target.style.backgroundColor = "#3d564d";
               e.target.style.transform = "translateY(-1px)";
               e.target.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.15)";
             }
           }}
           onMouseOut={(e) => {
-            if (!(!data.name || !data.description)) {
+            const isFormValid = data.formName && data.description && data.serviceName;
+            if (isFormValid) {
               e.target.style.backgroundColor = "var(--accent-green)";
               e.target.style.transform = "translateY(0)";
               e.target.style.boxShadow = "none";

@@ -4,13 +4,14 @@ import ServiceForm from './ServiceForm';
 import FormBuilder from './FormBuilder';
 import PreviewAndSave from './PreviewAndSave';
 
-const ServiceManagement = () => {
+const ServiceManagement = ({ departmentId, department }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [serviceData, setServiceData] = useState({
+    departmentID: departmentId,
     name: '',
     description: '',
     requiredDocuments: [],
@@ -81,6 +82,8 @@ const ServiceManagement = () => {
         return (
           <PreviewAndSave 
             data={serviceData}
+            departmentId={departmentId}
+            department={department}
             onPrev={() => setCurrentStep(2)}
             onSave={handleSave}
             loading={loading}

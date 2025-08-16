@@ -14,6 +14,7 @@ from .routes.admin import appointment_route
 from .routes.admin import feedback_route
 from .routes.admin import dashboard_route
 from .routes.admin import analytics_route
+from .routes.admin import service_route
 from .routes import web_monitor
 from .routes import knowledge_base
 from app.routes.citizen.appointment_route import router as appointment_router
@@ -63,6 +64,7 @@ app.include_router(
     dashboard_route.router, prefix="/api/admin/dashboard", tags=["Dashboard"]
 )
 app.include_router(analytics_route.router, prefix="/api/admin", tags=["Analytics"])
+app.include_router(service_route.router, prefix="/api", tags=["Services"])
 
 app.include_router(web_monitor.router, prefix="/api")
 app.include_router(knowledge_base.router, prefix="/api")

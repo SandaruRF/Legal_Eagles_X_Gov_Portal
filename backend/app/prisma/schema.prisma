@@ -150,14 +150,15 @@ model AppointmentDocument {
 }
 
 model FormTemplate {
-  form_id      String       @id @default(cuid())
-  form_name    String
-  template_url String // URL to a blank PDF or a template definition
+  form_id       String       @id @default(cuid())
+  form_name     String
+  template_url  String?      // URL to a blank PDF if available
+  form_template Json        // JSON structure of the form fields
 
-  service_id   String
-  service      Service      @relation(fields: [service_id], references: [service_id])
+  service_id    String
+  service       Service      @relation(fields: [service_id], references: [service_id])
 
-  filled_forms FilledForm[]
+  filled_forms  FilledForm[]
 }
 
 model FilledForm {

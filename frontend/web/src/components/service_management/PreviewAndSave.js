@@ -1,7 +1,117 @@
 import React from 'react';
 import { MdArrowBack, MdSave, MdInfo, MdDescription, MdDynamicForm } from 'react-icons/md';
 
-const PreviewAndSave = ({ data, onPrev, onSave, loading }) => {
+const PreviewAndSave = ({ data, departmentId, department, onPrev, onSave, loading }) => {
+  
+  const generateFormStructureJSON = () => {
+    const formStructure = {
+      departmentID: departmentId,
+      departmentName: department.name,
+      serviceName: data.serviceName,
+      formName: data.formName,
+      description: data.description,
+      category: data.category,
+      processingTime: data.processingTime,
+      requiredDocuments: data.requiredDocuments,
+      formFields: data.formFields.map(field => {
+        const baseField = {
+          type: field.type,
+          label: field.label,
+          required: field.required
+        };
+
+        // Add placeholder if exists
+        if (field.placeholder) {
+          baseField.placeholder = field.placeholder;
+        }
+
+        // Add field-specific properties based on type
+        switch (field.type) {
+          case 'text':
+            if (field.maxLength) {
+              baseField.maxLength = field.maxLength;
+            }
+            break;
+          
+          case 'number':
+            if (field.min !== undefined) {
+              baseField.minValue = field.min;
+            }
+            if (field.max !== undefined) {
+              baseField.maxValue = field.max;
+            }
+            break;
+          
+          case 'select':
+          case 'radio':
+          case 'checkbox':
+            if (field.options && Array.isArray(field.options)) {
+              baseField.options = field.options;
+            }
+            break;
+          
+          default:
+            // For other field types (email, tel, date, textarea, file)
+            // no additional properties needed
+            break;
+        }
+
+        return baseField;
+      })
+    };
+
+    return formStructure;
+  };
+
+  const downloadJSONFile = (data, filename) => {
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSaveService = async () => {
+    try {
+      // Generate the form structure JSON
+      const formStructureJSON = generateFormStructureJSON();
+      
+      // Make API call to save the service
+      const response = await fetch('http://localhost:8000/api/admin/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formStructureJSON)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save service');
+      }
+
+      const result = await response.json();
+      console.log('Service saved successfully:', result);
+      
+      // Call the original onSave function if provided
+      if (onSave) {
+        onSave();
+      }
+      
+    } catch (error) {
+      console.error('Error saving form structure:', error);
+      // You might want to show an error message to the user here
+      throw error;
+    }
+  };
+
   return (
     <div>
       {/* Header Section */}
@@ -55,7 +165,6 @@ const PreviewAndSave = ({ data, onPrev, onSave, loading }) => {
               borderBottom: "2px solid var(--primary-red)",
             }}
           >
-            
             <h4
               style={{
                 color: "var(--text-dark)",
@@ -74,7 +183,7 @@ const PreviewAndSave = ({ data, onPrev, onSave, loading }) => {
                 Service Name
               </span>
               <span style={{ fontSize: "1rem", color: "var(--text-dark)", fontWeight: "600" }}>
-                {data.name}
+                {data.serviceName}
               </span>
             </div>
 
@@ -98,35 +207,15 @@ const PreviewAndSave = ({ data, onPrev, onSave, loading }) => {
                   </div>
                 </div>
               )}
-
-              {data.processingTime && (
-                <div>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-light)", fontWeight: "500" }}>
-                    Processing Time
-                  </span>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-dark)" }}>
-                    {data.processingTime} days
-                  </div>
-                </div>
-              )}
             </div>
-
-            {data.fee !== undefined && (
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "0.85rem", color: "var(--text-light)", fontWeight: "500" }}>
-                  Service Fee
-                </span>
-                <span
-                  style={{
-                    fontSize: "1rem",
-                    color: data.fee === 0 ? "var(--accent-green)" : "var(--text-dark)",
-                    fontWeight: "600",
-                  }}
-                >
-                  {data.fee === 0 ? "Free" : `LKR ${data.fee.toFixed(2)}`}
-                </span>
-              </div>
-            )}
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-light)", fontWeight: "500" }}>
+                Form Name
+              </span>
+              <span style={{ fontSize: "0.9rem", color: "var(--text-dark)", lineHeight: "1.4" }}>
+                {data.formName}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -274,7 +363,6 @@ const PreviewAndSave = ({ data, onPrev, onSave, loading }) => {
                 paddingBottom: "0.75rem", 
               }}
             >
-              
               <span
                 style={{
                   fontSize: "1.2rem",
@@ -392,7 +480,7 @@ const PreviewAndSave = ({ data, onPrev, onSave, loading }) => {
         
         <button 
           type="button" 
-          onClick={onSave}
+          onClick={handleSaveService}
           disabled={loading}
           style={{
             padding: "0.75rem 2rem",
