@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/language_provider.dart';
 
-class LanguageSettingsScreen extends StatefulWidget {
+class LanguageSettingsScreen extends ConsumerStatefulWidget {
   const LanguageSettingsScreen({super.key});
 
   @override
-  State<LanguageSettingsScreen> createState() => _LanguageSettingsScreenState();
+  ConsumerState<LanguageSettingsScreen> createState() =>
+      _LanguageSettingsScreenState();
 }
 
-class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
-  String _selectedLanguage = 'English';
-
+class _LanguageSettingsScreenState
+    extends ConsumerState<LanguageSettingsScreen> {
   final List<Map<String, String>> _languages = [
     {'name': 'English', 'code': 'en'},
     {'name': 'Sinhala', 'code': 'si'},
     {'name': 'Tamil', 'code': 'ta'},
   ];
 
-  void _selectLanguage(String language) {
-    setState(() {
-      _selectedLanguage = language;
-    });
+  void _selectLanguage(String languageCode) {
+    ref.read(languageProvider.notifier).changeLanguage(languageCode);
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentLanguage = ref.watch(languageProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SafeArea(
@@ -35,27 +38,23 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
             // Content
             Expanded(
-              child: Container(
-                color: const Color(0xFFF9FAFB),
+              child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 58),
+                      const SizedBox(height: 24),
 
                       // Title
-                      const Padding(
-                        padding: EdgeInsets.only(left: 5),
-                        child: Text(
-                          'Select Language',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF1F2937),
-                            height: 1.5,
-                          ),
+                      Text(
+                        AppLocalizations.of(context)!.language,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF171717),
+                          height: 1.36,
                         ),
                       ),
 
@@ -67,7 +66,8 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                           children: [
                             _buildLanguageOption(
                               language['name']!,
-                              _selectedLanguage == language['name'],
+                              currentLanguage.languageCode == language['code'],
+                              language['code']!,
                             ),
                             const SizedBox(height: 12),
                           ],
@@ -148,9 +148,13 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
     );
   }
 
-  Widget _buildLanguageOption(String languageName, bool isSelected) {
+  Widget _buildLanguageOption(
+    String languageName,
+    bool isSelected,
+    String languageCode,
+  ) {
     return GestureDetector(
-      onTap: () => _selectLanguage(languageName),
+      onTap: () => _selectLanguage(languageCode),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(17),

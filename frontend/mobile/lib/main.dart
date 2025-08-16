@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/services/http_client_service.dart';
+import 'providers/language_provider.dart';
+import 'providers/theme_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/startup/startup_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/onboarding/onboarding_screen_2.dart';
@@ -50,14 +54,37 @@ void main() {
   runApp(const ProviderScope(child: MainApp()));
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(languageProvider);
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Triathalon Gov Portal',
-      theme: ThemeData(primarySwatch: Colors.orange),
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.orange,
+        brightness: Brightness.dark,
+      ),
+      themeMode: themeMode,
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('si'), // Sinhala
+        Locale('ta'), // Tamil
+      ],
       initialRoute: '/startup',
       routes: {
         '/startup': (context) => const StartupScreen(),

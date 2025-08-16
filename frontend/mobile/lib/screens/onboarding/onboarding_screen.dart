@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/navigation_debug_widget.dart';
+import '../../l10n/app_localizations.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -13,6 +15,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   String selectedLanguage = 'English';
+  String tempSelectedLanguage = 'English'; // For UI display only
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
 
@@ -40,7 +43,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   void _selectLanguage(String language) {
     setState(() {
       selectedLanguage = language;
+      tempSelectedLanguage = language;
     });
+
+    // Update app language immediately when user selects a language
+    String languageCode;
+    switch (language) {
+      case 'Sinhala':
+        languageCode = 'si';
+        break;
+      case 'Tamil':
+        languageCode = 'ta';
+        break;
+      case 'English':
+      default:
+        languageCode = 'en';
+        break;
+    }
+
+    // Change app language immediately
+    ref.read(languageProvider.notifier).changeLanguage(languageCode);
 
     double targetPosition;
     switch (language) {
@@ -175,7 +197,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                         Padding(
                           padding: const EdgeInsets.only(left: 6, bottom: 8),
                           child: Text(
-                            'Select Language!',
+                            AppLocalizations.of(context)!.selectLanguage,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: screenWidth * 0.04,
@@ -367,7 +389,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                               shadowColor: Colors.black.withOpacity(0.63),
                             ),
                             child: Text(
-                              'Get Started →',
+                              AppLocalizations.of(context)!.getStarted,
                               style: TextStyle(
                                 fontWeight: FontWeight.w400,
                                 fontSize: screenWidth * 0.05,
