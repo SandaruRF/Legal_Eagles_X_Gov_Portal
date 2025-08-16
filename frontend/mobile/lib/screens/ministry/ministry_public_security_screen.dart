@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
 
 class MinistryPublicSecurityScreen extends StatefulWidget {
   const MinistryPublicSecurityScreen({super.key});
@@ -151,81 +152,7 @@ class _MinistryPublicSecurityScreenState
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: Container(
-        height: 88,
-        decoration: const BoxDecoration(color: Color(0xFFF2F2F2)),
-        child: Column(
-          children: [
-            // Tab bar icons
-            Container(
-              height: 46.25,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 41.9,
-                vertical: 9.8,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavIcon(Icons.home, true),
-                  _buildNavIcon(Icons.search, false),
-                  _buildNavIcon(Icons.notifications, false),
-                  _buildNavIcon(Icons.settings, false),
-                ],
-              ),
-            ),
-            // Tab bar labels
-            Container(
-              height: 35.01,
-              padding: const EdgeInsets.symmetric(horizontal: 37.69),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Home',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Search',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Notification',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const CustomBottomNavigationBar(currentPage: 'home'),
 
       // Floating Action Button for Chatbot
       floatingActionButton: Container(
@@ -257,7 +184,9 @@ class _MinistryPublicSecurityScreenState
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(
+                    currentPage: 'Ministry Public Security',
+                  );
                 },
               );
             },
@@ -272,18 +201,6 @@ class _MinistryPublicSecurityScreenState
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
-  }
-
-  Widget _buildNavIcon(IconData icon, bool isSelected) {
-    return SizedBox(
-      width: 23.33,
-      height: 26.65,
-      child: Icon(
-        icon,
-        size: 24,
-        color: isSelected ? const Color(0xFFFF5B00) : const Color(0xFF809FB8),
-      ),
     );
   }
 

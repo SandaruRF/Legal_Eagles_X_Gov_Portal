@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'notification_details_screen.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -364,7 +365,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(currentPage: 'Notifications');
                 },
               );
             },
@@ -379,6 +380,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: const CustomBottomNavigationBar(
+        currentPage: 'notifications',
+      ),
     );
   }
 }

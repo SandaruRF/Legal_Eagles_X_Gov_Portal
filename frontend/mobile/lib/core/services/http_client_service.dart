@@ -191,6 +191,9 @@ class HttpClientService {
       headers.remove('Content-Type'); // Let MultipartRequest handle this
       request.headers.addAll(headers);
 
+      print('Upload headers: $headers');
+      print('Auth token: $_authToken');
+
       // Add the file
       var multipartFile = await http.MultipartFile.fromPath(
         fieldName,
@@ -247,30 +250,78 @@ class HttpClientService {
     print('Response Body: ${response.body}');
 
     try {
-      final Map<String, dynamic> responseData =
-          response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      // Check for HTML responses (redirects, errors)
+      if (response.body.trim().startsWith('<html') ||
+          response.body.trim().startsWith('<!DOCTYPE')) {
+        return ApiResponse<T>.error(
+          message:
+              response.statusCode == 301 || response.statusCode == 302
+                  ? 'Server redirect detected. Please check the API endpoint configuration.'
+                  : 'Server returned HTML instead of JSON. Status: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+
+      // Try to parse as JSON, but handle plain text responses
+      Map<String, dynamic> responseData = {};
+
+      if (response.body.isNotEmpty) {
+        try {
+          responseData = jsonDecode(response.body);
+        } catch (e) {
+          // If JSON parsing fails, treat as plain text error
+          if (response.statusCode >= 400) {
+            return ApiResponse<T>.error(
+              message:
+                  response.body.isNotEmpty
+                      ? response.body
+                      : 'Server error occurred',
+              statusCode: response.statusCode,
+            );
+          }
+          // For success responses that aren't JSON, create a simple response
+          responseData = {
+            'message': response.body,
+            'data': response.body, // Set data field for plain string responses
+          };
+        }
+      }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         // Handle both wrapped and direct response formats
         T? parsedData;
         if (fromJson != null) {
-          // Try to parse from 'data' field first (wrapped format)
-          if (responseData['data'] != null) {
-            parsedData = fromJson(responseData['data']);
-          } else {
-            // If no 'data' field, parse the entire response (direct format)
-            parsedData = fromJson(responseData);
+          try {
+            // Try to parse from 'data' field first (wrapped format)
+            if (responseData['data'] != null) {
+              parsedData = fromJson(responseData['data']);
+            } else {
+              // If no 'data' field, parse the entire response (direct format)
+              parsedData = fromJson(responseData);
+            }
+          } catch (parseError) {
+            print('Error parsing response data: $parseError');
+            print('Response data: $responseData');
+
+            // If parsing fails, return error with details
+            return ApiResponse<T>.error(
+              message: 'Failed to parse response: $parseError',
+              statusCode: response.statusCode,
+            );
           }
         }
 
         return ApiResponse<T>.success(
-          message: responseData['message'] ?? 'Success',
+          message: responseData['message']?.toString() ?? 'Success',
           data: parsedData ?? responseData['data'],
           statusCode: response.statusCode,
         );
       } else {
         return ApiResponse<T>.error(
-          message: responseData['message'] ?? 'An error occurred',
+          message:
+              responseData['message'] ?? response.body.isNotEmpty
+                  ? response.body
+                  : 'An error occurred',
           errors: responseData['errors'],
           statusCode: response.statusCode,
         );

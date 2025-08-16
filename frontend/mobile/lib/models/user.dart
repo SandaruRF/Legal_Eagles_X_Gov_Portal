@@ -1,5 +1,6 @@
 class User {
   final String? id;
+  final String? citizenId;
   final String fullName;
   final String nicNo;
   final String phoneNo;
@@ -10,6 +11,7 @@ class User {
 
   const User({
     this.id,
+    this.citizenId,
     required this.fullName,
     required this.nicNo,
     required this.phoneNo,
@@ -22,6 +24,7 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id']?.toString(),
+      citizenId: json['citizen_id']?.toString(),
       fullName: json['full_name'] ?? '',
       nicNo: json['nic_no'] ?? '',
       phoneNo: json['phone_no'] ?? '',
@@ -41,6 +44,7 @@ class User {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'citizen_id': citizenId,
       'full_name': fullName,
       'nic_no': nicNo,
       'phone_no': phoneNo,
@@ -53,6 +57,7 @@ class User {
 
   User copyWith({
     String? id,
+    String? citizenId,
     String? fullName,
     String? nicNo,
     String? phoneNo,
@@ -63,6 +68,7 @@ class User {
   }) {
     return User(
       id: id ?? this.id,
+      citizenId: citizenId ?? this.citizenId,
       fullName: fullName ?? this.fullName,
       nicNo: nicNo ?? this.nicNo,
       phoneNo: phoneNo ?? this.phoneNo,
@@ -75,7 +81,7 @@ class User {
 
   @override
   String toString() {
-    return 'User(id: $id, fullName: $fullName, email: $email, nicNo: $nicNo)';
+    return 'User(id: $id, citizenId: $citizenId, fullName: $fullName, email: $email, nicNo: $nicNo)';
   }
 
   @override
@@ -83,6 +89,7 @@ class User {
     if (identical(this, other)) return true;
     return other is User &&
         other.id == id &&
+        other.citizenId == citizenId &&
         other.fullName == fullName &&
         other.nicNo == nicNo &&
         other.phoneNo == phoneNo &&
@@ -92,6 +99,7 @@ class User {
   @override
   int get hashCode {
     return id.hashCode ^
+        citizenId.hashCode ^
         fullName.hashCode ^
         nicNo.hashCode ^
         phoneNo.hashCode ^

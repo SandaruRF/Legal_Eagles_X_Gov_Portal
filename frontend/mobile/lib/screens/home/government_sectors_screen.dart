@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chatbot_overlay.dart';
+import '../../widgets/bottom_navigation_bar.dart';
 
 class GovernmentSectorsScreen extends StatefulWidget {
   const GovernmentSectorsScreen({super.key});
@@ -10,6 +11,14 @@ class GovernmentSectorsScreen extends StatefulWidget {
 }
 
 class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
+  String _selectedSortOption = 'Ascending';
+  final List<String> _sortOptions = [
+    'Ascending',
+    'Descending',
+    'Last Used',
+    'By Popularity',
+  ];
+
   final List<Map<String, dynamic>> _allSectors = [
     {
       'title': 'Education',
@@ -101,6 +110,31 @@ class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
   @override
   void initState() {
     super.initState();
+  }
+
+  List<Map<String, dynamic>> get _sortedSectors {
+    List<Map<String, dynamic>> sectors = List.from(_allSectors);
+
+    switch (_selectedSortOption) {
+      case 'Ascending':
+        sectors.sort((a, b) => a['title'].compareTo(b['title']));
+        break;
+      case 'Descending':
+        sectors.sort((a, b) => b['title'].compareTo(a['title']));
+        break;
+      case 'Last Used':
+        // For demo purposes, reverse the list to simulate last used
+        sectors = sectors.reversed.toList();
+        break;
+      case 'By Popularity':
+        // For demo purposes, sort by description length as a popularity metric
+        sectors.sort(
+          (a, b) => b['description'].length.compareTo(a['description'].length),
+        );
+        break;
+    }
+
+    return sectors;
   }
 
   @override
@@ -268,10 +302,51 @@ class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
                           color: const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Icon(
-                          Icons.tune,
-                          color: Color(0xFF666666),
-                          size: 18,
+                        child: PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.tune,
+                            color: Color(0xFF666666),
+                            size: 18,
+                          ),
+                          onSelected: (String value) {
+                            setState(() {
+                              _selectedSortOption = value;
+                            });
+                          },
+                          itemBuilder: (BuildContext context) {
+                            return _sortOptions.map((String option) {
+                              return PopupMenuItem<String>(
+                                value: option,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _selectedSortOption == option
+                                          ? Icons.check_circle
+                                          : Icons.radio_button_unchecked,
+                                      color:
+                                          _selectedSortOption == option
+                                              ? const Color(0xFFFF5B00)
+                                              : const Color(0xFF666666),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      option,
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color:
+                                            _selectedSortOption == option
+                                                ? const Color(0xFFFF5B00)
+                                                : const Color(0xFF666666),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList();
+                          },
                         ),
                       ),
                     ],
@@ -288,10 +363,10 @@ class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
               child: Column(
                 children: [
                   // Build sectors in vertical list
-                  for (int i = 0; i < _allSectors.length; i++)
+                  for (int i = 0; i < _sortedSectors.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 17),
-                      child: _buildSectorCard(_allSectors[i]),
+                      child: _buildSectorCard(_sortedSectors[i]),
                     ),
 
                   const SizedBox(height: 100), // Space for bottom navigation
@@ -303,81 +378,7 @@ class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: Container(
-        height: 88,
-        decoration: const BoxDecoration(color: Color(0xFFF2F2F2)),
-        child: Column(
-          children: [
-            // Tab bar icons
-            Container(
-              height: 46.25,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 41.9,
-                vertical: 9.8,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavIcon(Icons.home, true),
-                  _buildNavIcon(Icons.search, false),
-                  _buildNavIcon(Icons.notifications, false),
-                  _buildNavIcon(Icons.settings, false),
-                ],
-              ),
-            ),
-            // Tab bar labels
-            Container(
-              height: 35.01,
-              padding: const EdgeInsets.symmetric(horizontal: 37.69),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Home',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Search',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Notification',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                  Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF85A3BB),
-                      height: 1.83,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const CustomBottomNavigationBar(currentPage: 'home'),
 
       // Floating Action Button
       floatingActionButton: Container(
@@ -409,7 +410,9 @@ class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
                 barrierDismissible: true,
                 barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return const ChatbotOverlay();
+                  return const ChatbotOverlay(
+                    currentPage: 'Government Sectors',
+                  );
                 },
               );
             },
@@ -424,18 +427,6 @@ class _GovernmentSectorsScreenState extends State<GovernmentSectorsScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
-  }
-
-  Widget _buildNavIcon(IconData icon, bool isSelected) {
-    return SizedBox(
-      width: 23.33,
-      height: 26.65,
-      child: Icon(
-        icon,
-        size: 24,
-        color: isSelected ? const Color(0xFFFF5B00) : const Color(0xFF809FB8),
-      ),
     );
   }
 

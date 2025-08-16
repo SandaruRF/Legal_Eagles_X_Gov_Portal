@@ -68,6 +68,7 @@ model Citizen {
   filled_forms FilledForm[]
   feedback     Feedback[]
   Notification Notification[]
+  MessageLog   MessageLog[]
 }
 
 model KYC {
@@ -109,16 +110,16 @@ model Department {
 }
 
 model Service {
-  service_id         String  @id @default(cuid())
+  service_id         String         @id @default(cuid())
   name               String
   description        String?
   required_documents Json?
   department_id      String
-  department         Department    @relation(fields: [department_id], references: [department_id])
+  department         Department     @relation(fields: [department_id], references: [department_id])
   appointments       Appointment[]
   form_templates     FormTemplate[]
   locations          Location[]
-  time_slots         TimeSlot[] @relation("ServiceTimeSlots")
+  time_slots         TimeSlot[]     @relation("ServiceTimeSlots")
 }
 
 model Admin {
@@ -153,13 +154,13 @@ model Appointment {
   assigned_admin_id String?
   assigned_admin    Admin?  @relation(fields: [assigned_admin_id], references: [admin_id])
 
-  documents           AppointmentDocument[]
-  feedback            Feedback?
+  documents AppointmentDocument[]
+  feedback  Feedback?
 
-  timeSlotTimeslot_id    String?
-  timeslot               TimeSlot?         @relation("TimeSlotAppointments", fields: [timeSlotTimeslot_id], references: [timeslot_id])
+  timeSlotTimeslot_id String?
+  timeslot            TimeSlot? @relation("TimeSlotAppointments", fields: [timeSlotTimeslot_id], references: [timeslot_id])
 
-  notifications       Notification[]
+  notifications Notification[]
 }
 
 model AppointmentDocument {
@@ -175,7 +176,7 @@ model AppointmentDocument {
 model FormTemplate {
   form_id       String  @id @default(cuid())
   form_name     String
-  template_url  String // URL to a blank PDF or a template definition
+  template_url  String? // URL to a blank PDF or a template definition
   form_template Json?
   service_id    String
   service       Service @relation(fields: [service_id], references: [service_id])
@@ -235,21 +236,19 @@ model ContentChangeLog {
   web_page    WebPageRecord? @relation(fields: [web_page_id], references: [id])
 }
 
-
 model TimeSlot {
-  timeslot_id      String   @id @default(cuid())
-  slot_datetime    DateTime
-  location_id      String
-  max_appointments Int      @default(50)
+  timeslot_id       String        @id @default(cuid())
+  slot_datetime     DateTime
+  location_id       String
+  max_appointments  Int           @default(50)
   assigned_admin_id String?
-  assigned_admin Admin? @relation("AdminTimeSlots", fields: [assigned_admin_id], references: [admin_id])
-  service_id       String?
-  service          Service? @relation("ServiceTimeSlots", fields: [service_id], references: [service_id])
-  location         Location @relation("LocationTimeSlots", fields: [location_id], references: [id])
-  appointments     Appointment[] @relation("TimeSlotAppointments")
-  appointment_ids  String[] @default([])
+  assigned_admin    Admin?        @relation("AdminTimeSlots", fields: [assigned_admin_id], references: [admin_id])
+  service_id        String?
+  service           Service?      @relation("ServiceTimeSlots", fields: [service_id], references: [service_id])
+  location          Location      @relation("LocationTimeSlots", fields: [location_id], references: [id])
+  appointments      Appointment[] @relation("TimeSlotAppointments")
+  appointment_ids   String[]      @default([])
 }
-
 
 model Notification {
   notification_id String               @id @default(cuid())
@@ -273,12 +272,21 @@ model Notification {
   @@index([appointment_id])
 }
 
-
 model Location {
-  id          String @id @default(cuid())
-  address     String
-  service_id  String
-  service     Service @relation(fields: [service_id], references: [service_id])
-  time_slots  TimeSlot[] @relation("LocationTimeSlots")
+  id         String     @id @default(cuid())
+  address    String
+  service_id String
+  service    Service    @relation(fields: [service_id], references: [service_id])
+  time_slots TimeSlot[] @relation("LocationTimeSlots")
+}
+
+model MessageLog {
+  id         Int      @id @default(autoincrement())
+  message    String
+  response   String
+  created_at DateTime @default(now())
+
+  citizen_id String
+  citizen    Citizen @relation(fields: [citizen_id], references: [citizen_id])
 }
 

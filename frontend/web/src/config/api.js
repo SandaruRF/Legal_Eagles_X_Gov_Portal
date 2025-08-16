@@ -31,6 +31,11 @@ const config = {
 
         // Department endpoints
         department_by_id: "/api/departments/",
+
+        //KYC Verification endpoints
+        pending_kycs: "/api/admins/kyc_verifications/pending",
+        kyc_by_id: "/api/admins/kyc_verifications/{kyc_id}",
+        verify_kyc: "/api/admins/kyc_verifications/{kyc_id}/verify",
     },
 
     // Request timeout in milliseconds

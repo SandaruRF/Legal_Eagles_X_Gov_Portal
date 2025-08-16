@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from fastapi import APIRouter, Depends, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from prisma import Prisma
@@ -9,6 +9,7 @@ from fastapi import UploadFile, File
 from pydantic import BaseModel
 from fastapi import Body, Form
 import json
+from fastapi import HTTPException
 
 
 
@@ -18,6 +19,7 @@ from app.schemas.admin import admin_schema
 from app.schemas import token_schema
 from app.core import auth
 from app.services.admin import admin_service
+from app.schemas.admin.form_schema import FormTemplateRequest
 
 router = APIRouter(prefix="/admins", tags=["Admins"])
 
@@ -150,27 +152,25 @@ async def update_appointment_status_admin(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{service_id}/store-form-template")
+
+
+@router.post("/store-form-template")
 async def store_form_template_endpoint(
-    service_id: str,
-    request: str = Body(...), # JSON string of FormTemplateRequest
-    template_file: UploadFile = File(None),
-    current_admin: admin_schema.Admin = Depends(auth.get_current_admin)
+    request: str = Form(...),
+    template_file: Optional[UploadFile] = File(None),
+    # current_admin: admin_schema.Admin = Depends(auth.get_current_admin)
 ):
     """
-    Stores a new form template in the FilledTemplate table.
-    If a template file is provided, uploads it to Supabase and stores the URL.
+    Receives a multipart/form-data request with a JSON string in 'request' and an optional file. Creates a new Service row, then stores the form template using the generated service_id.
     """
     import json
     try:
         request_dict = json.loads(request)
-        validated = admin_schema.FormTemplateRequest(**request_dict)
+        validated = FormTemplateRequest(**request_dict)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid request format: {e}")
     template_url = None
-    template_bytes = None
-    template_filename = None
-    if template_file:
+    if template_file is not None and isinstance(template_file, UploadFile):
         template_bytes = await template_file.read()
         template_filename = template_file.filename
         from app.core.supabase_client import supabase
@@ -178,7 +178,16 @@ async def store_form_template_endpoint(
         file_path = template_filename
         supabase.storage.from_(BUCKET_NAME).upload(file_path, template_bytes, {"content-type": "application/pdf", "x-upsert": "true"})
         template_url = supabase.storage.from_(BUCKET_NAME).get_public_url(file_path)
-    # Serialize form_template as JSON string before saving
+    required_documents_json = json.dumps(validated.required_documents)
+    new_service = await db.service.create(
+        data={
+            "name": validated.service_name,
+            "description": validated.service_description,
+            "required_documents": required_documents_json,
+            "department_id": validated.department_id
+        }
+    )
+    service_id = new_service.service_id
     form_template_json = json.dumps(validated.form_template)
     new_template = await db.formtemplate.create(
         data={
@@ -188,4 +197,4 @@ async def store_form_template_endpoint(
             "template_url": template_url
         }
     )
-    return JSONResponse(content={"status": "success", "form_id": new_template.form_id})
+    return JSONResponse(content={"status": "success", "form_id": new_template.form_id, "service_id": service_id})
