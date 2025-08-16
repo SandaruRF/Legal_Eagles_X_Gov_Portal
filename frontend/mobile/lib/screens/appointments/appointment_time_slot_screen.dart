@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../core/services/http_client_service.dart';
 import '../../core/services/token_storage_service.dart';
 import '../../core/config/environment_config.dart';
+import 'appointment_document_upload.dart';
 
 class AppointmentTimeSlotScreen extends ConsumerStatefulWidget {
   final String serviceId;
@@ -31,7 +31,6 @@ class _AppointmentTimeSlotScreenState
   String? error;
   String? selectedDate;
   String? selectedSlotId;
-  final HttpClientService _httpClient = HttpClientService();
 
   @override
   void initState() {
@@ -106,114 +105,31 @@ class _AppointmentTimeSlotScreenState
   Future<void> _bookAppointment() async {
     if (selectedSlotId == null || selectedDate == null) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B00)),
-                ),
-                SizedBox(height: 16),
-                Text('Booking appointment...'),
-              ],
-            ),
-          ),
-    );
-
+    // Navigate to document upload page instead of booking directly
     try {
-      final bookingData = {
-        'service_id': widget.serviceId,
-        'location_id': widget.locationId,
-        'slot_id': selectedSlotId,
-        'date': selectedDate,
-        'citizen_id': '12345', // TODO: Get from user context
-        'form_data': widget.formData,
-      };
-
-      final response = await _httpClient.post(
-        EnvironmentConfig.appointmentBook,
-        body: bookingData,
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AppointmentDocumentUploadScreen(
+            serviceId: widget.serviceId,
+            locationId: widget.locationId,
+            slotId: selectedSlotId!,
+            selectedDate: selectedDate!,
+            formData: widget.formData,
+          ),
+        ),
       );
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-
-        if (response.success) {
-          _showSuccessDialog(response.data);
-        } else {
-          throw Exception(response.message);
-        }
-      }
+      // If the upload was successful, the document upload screen will handle navigation
+      // No need to do anything here as the success dialog in upload screen handles it
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to book appointment: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to navigate to document upload: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-  }
-
-  void _showSuccessDialog(dynamic appointmentData) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 28),
-                SizedBox(width: 8),
-                Text('Appointment Booked!'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Your appointment has been successfully booked.'),
-                const SizedBox(height: 16),
-                if (appointmentData is Map<String, dynamic>) ...[
-                  if (appointmentData['appointment_id'] != null)
-                    Text(
-                      'Appointment ID: ${appointmentData['appointment_id']}',
-                    ),
-                  if (appointmentData['reference_number'] != null)
-                    Text('Reference: ${appointmentData['reference_number']}'),
-                  const SizedBox(height: 8),
-                  Text('Date: $selectedDate'),
-                  if (selectedSlotId != null) ...[
-                    Text('Time: ${_getSelectedSlotTime()}'),
-                  ],
-                ],
-                const SizedBox(height: 16),
-                const Text(
-                  'Please arrive 15 minutes before your scheduled time.',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close success dialog
-                  Navigator.popUntil(
-                    context,
-                    (route) => route.isFirst,
-                  ); // Go back to home
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
   }
 
   Widget _buildTimeSlots(List<Map<String, dynamic>> slots) {
@@ -292,24 +208,6 @@ class _AppointmentTimeSlotScreenState
     );
   }
 
-  String _getSelectedSlotTime() {
-    if (selectedDate == null ||
-        selectedSlotId == null ||
-        availableSlots == null) {
-      return '';
-    }
-
-    final slots = availableSlots![selectedDate!];
-    if (slots != null) {
-      final selectedSlot = slots.firstWhere(
-        (slot) => slot['slot_id'].toString() == selectedSlotId,
-        orElse: () => {},
-      );
-      return selectedSlot['time'] ?? '';
-    }
-    return '';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -334,7 +232,7 @@ class _AppointmentTimeSlotScreenState
                     ),
                   ),
                   child: const Text(
-                    'Book Appointment',
+                    'Continue to Upload Documents',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
