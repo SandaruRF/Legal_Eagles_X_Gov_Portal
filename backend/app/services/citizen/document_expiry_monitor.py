@@ -6,12 +6,14 @@ from app.core.database import get_db
 from app.services.citizen.notification_repository import create_notification
 from app.schemas.citizen.notification import NotificationCreate
 from prisma.enums import NotificationType, NotificationPriority
+import logging
 
+logger = logging.getLogger(__name__)
 CHECK_INTERVAL_HOURS = 6  # Check every 6 hours
 
 async def document_expiry_monitor():
     """Monitors document expiry and sends notifications"""
-    db: Prisma = await get_db()
+    db: Prisma = get_db()
     
     while True:
         try:
