@@ -5,7 +5,8 @@ from app.core.database import db
 from app.core.auth import get_current_user
 from app.schemas.citizen import citizen_schema
 from app.schemas.citizen.appointment_schema import AppointmentBookingRequest
-from app.services.citizen.citizen_service import get_available_slots, book_appointment, get_user_appointments
+from app.schemas.citizen.model_schema import TaskInput
+from app.services.citizen.citizen_service import get_available_slots, book_appointment, get_user_appointments,predict_appointment_time
 
 router = APIRouter(
     prefix="/appointments",
@@ -64,7 +65,8 @@ async def book_appointment_endpoint(
         booking_response = await book_appointment(booking_request)
         return JSONResponse(content={
             "status": "success",
-            "appointment": booking_response
+            "appointment": booking_response,
+            "predicted_duration": predicted_time
         })
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

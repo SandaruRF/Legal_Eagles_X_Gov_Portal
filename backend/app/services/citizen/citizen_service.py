@@ -8,10 +8,85 @@ from PyPDF2 import PdfReader, PdfWriter
 from PyPDF2.generic import NameObject, BooleanObject
 import os
 import uuid
-import shutil
 import tempfile
+import pandas as pd
+import numpy as np
+import pickle
+import xgboost as xgb
+from pydantic import BaseModel
 
 from app.core.supabase_client import supabase
+
+def predict_appointment_time(datetime: str,task_id: str):
+    MODEL_DIR = os.path.join(os.path.dirname(__file__), '../../../model')
+    model_path = os.path.abspath(os.path.join(MODEL_DIR, 'xgb_predict_model.pkl'))
+    stats_path = os.path.abspath(os.path.join(MODEL_DIR, 'task_stats.csv'))
+
+    with open(model_path, 'rb') as f:
+        model = pickle.load(f)
+    task_stats = pd.read_csv(stats_path)
+    # Convert task_id to int
+    task_id_int = int(task_id.split("-")[-1])
+
+    appt_datetime = pd.to_datetime(datetime)
+
+    # Build dataframe
+    df = pd.DataFrame([{
+        "task_id": task_id_int,
+        "appt_datetime": appt_datetime
+    }])
+
+    # Time features
+    df["hour"] = df["appt_datetime"].dt.hour
+    df["day_of_week"] = df["appt_datetime"].dt.dayofweek
+    df["month"] = df["appt_datetime"].dt.month
+    df["week_of_year"] = df["appt_datetime"].dt.isocalendar().week.astype(int)
+
+    # Cyclic features
+    df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
+    df["month_sin"] = np.sin(2 * np.pi * df["month"] / 12)
+    df["month_cos"] = np.cos(2 * np.pi * df["month"] / 12)
+    df["dow_sin"] = np.sin(2 * np.pi * df["day_of_week"] / 7)
+
+    df["is_end_of_month"] = df["appt_datetime"].dt.is_month_end.astype(int)
+    df["is_monday"] = (df["day_of_week"] == 0).astype(int)
+    df["is_friday"] = (df["day_of_week"] == 4).astype(int)
+
+    df["task_dow_sin_interaction"] = df["task_id"] * df["dow_sin"]
+
+    # Festival features
+    festival_md = ["01-01","01-14","01-15","02-04","04-13","04-14","05-01","12-25"]
+    festival_dates = [pd.to_datetime(f"2000-{md}") for md in festival_md]
+
+    def days_to_next_festival(date):
+        app_md = date.replace(year=2000)
+        future_days = [(f - app_md).days if (f - app_md).days >= 0 else (f - app_md).days + 366 for f in festival_dates]
+        return min(future_days)
+
+    def days_since_last_festival(date):
+        app_md = date.replace(year=2000)
+        past_days = [(app_md - f).days if (app_md - f).days >= 0 else (app_md - f).days + 366 for f in festival_dates]
+        return min(past_days)
+
+    df["days_to_next_festival"] = df["appt_datetime"].dt.date.apply(lambda d: days_to_next_festival(pd.to_datetime(d)))
+    df["days_since_last_festival"] = df["appt_datetime"].dt.date.apply(lambda d: days_since_last_festival(pd.to_datetime(d)))
+
+    # Merge with task_stats
+    df = df.merge(task_stats, how="left", left_on="task_id", right_on="task_id")
+    df["task_count_per_month"] = df["task_count_per_month"].fillna(0)
+    df["task_id_mean_duration"] = df["task_id_mean_duration"].fillna(0)
+
+    # Select columns in the same order
+    feature_cols = [
+        'hour_sin','month_sin','month_cos','week_of_year',
+        'is_friday','is_monday','is_end_of_month','days_to_next_festival',
+        'days_since_last_festival','task_dow_sin_interaction',
+        'task_id_mean_duration','task_count_per_month'
+    ]
+
+    dtest = xgb.DMatrix(df[feature_cols])
+    pred_minutes  = model.predict(dtest).round().astype(int)[0]
+    return int(pred_minutes)
 
 async def get_form_template(form_id: str):
     form = await db.formtemplate.find_unique(where={"form_id": form_id})
@@ -197,6 +272,9 @@ async def book_appointment(booking_request: AppointmentBookingRequest):
         )
 
     service = await db.service.find_unique(where={"service_id": booking_request.service_id}, include={"department": True})
+    task_id="TASK-001"
+    predicted_duration = predict_appointment_time(slot_datetime, task_id)
+
     return {
         "appointment_id": appointment.appointment_id,
         "reference_number": reference_number,
@@ -205,7 +283,8 @@ async def book_appointment(booking_request: AppointmentBookingRequest):
             "department": service.department.name if service and service.department else ""
         },
         "scheduled_date": appointment.appointment_datetime.strftime("%Y-%m-%d"),
-        "scheduled_time": appointment.appointment_datetime.strftime("%H:%M:%S")
+        "scheduled_time": appointment.appointment_datetime.strftime("%H:%M:%S"),
+        "approximate_duration": predicted_duration
     }
 
 async def get_user_appointments(status: str, citizen_id: str):
@@ -230,6 +309,6 @@ async def get_user_appointments(status: str, citizen_id: str):
             "scheduled_date": apt.appointment_datetime.strftime("%Y-%m-%d"),
             "scheduled_time": apt.appointment_datetime.strftime("%H:%M:%S"),
             "status": apt.status,
-            "address": address
+            "address": address,
         })
     return result
