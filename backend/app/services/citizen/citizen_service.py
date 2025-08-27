@@ -18,9 +18,8 @@ from pydantic import BaseModel
 from app.core.supabase_client import supabase
 
 def predict_appointment_time(datetime: str,task_id: str):
-    MODEL_DIR = os.path.join(os.path.dirname(__file__), '../../../model')
-    model_path = os.path.abspath(os.path.join(MODEL_DIR, 'xgb_predict_model.pkl'))
-    stats_path = os.path.abspath(os.path.join(MODEL_DIR, 'task_stats.csv'))
+    model_path = "model/xgb_predict_model.pkl"
+    stats_path = "model/task_stats.csv"
 
     with open(model_path, 'rb') as f:
         model = pickle.load(f)

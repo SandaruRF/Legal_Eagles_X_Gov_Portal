@@ -66,7 +66,6 @@ async def book_appointment_endpoint(
         return JSONResponse(content={
             "status": "success",
             "appointment": booking_response,
-            "predicted_duration": predicted_time
         })
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
