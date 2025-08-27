@@ -1,4 +1,5 @@
-# backend/app/routes/notifications.py
+
+from prisma import Prisma
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.database import get_db
 from app.core.auth import get_current_user

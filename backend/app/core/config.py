@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_SCRAPES: int = 5
     REQUEST_TIMEOUT: int = 30
     MAX_RETRIES: int = 3
-    
+    gemini_api_key: str | None = None
     # Celery Configuration
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
