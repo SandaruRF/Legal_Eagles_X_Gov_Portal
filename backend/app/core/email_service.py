@@ -7,7 +7,7 @@ import logging
 import datetime
  
 
-logger = logging.getLogger(_name_)
+logger = logging.getLogger(__name__)
 
 async def send_notification_email(
     email: str,

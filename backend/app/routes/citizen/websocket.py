@@ -1,9 +1,11 @@
-# backend/app/routes/notification/websocket.py
-from fastapi import WebSocket, WebSocketDisconnect, Depends
-from fastapi import APIRouter
+# backend/app/routes/citizen/websocket.py
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, Depends
 from app.core.auth import get_current_user
 from app.schemas.citizen import citizen_schema
-from app.core.notification_manager import notification_manager
+from app.core.websocket_manager import WebSocketManager
+
+# Create a WebSocket manager instance
+websocket_manager = WebSocketManager()
 
 router = APIRouter()
 
@@ -12,10 +14,22 @@ async def websocket_endpoint(
     websocket: WebSocket,
     current_user: citizen_schema.Citizen = Depends(get_current_user)
 ):
-    await notification_manager.connect(current_user.citizen_id, websocket)
+    """WebSocket endpoint for notifications"""
     try:
+        # Accept the connection
+        await websocket.accept()
+        # Connect to WebSocket manager
+        await websocket_manager.connect(current_user.citizen_id, websocket)
+        
         while True:
-            # Keep connection alive
-            await websocket.receive_text()
+            # Keep the connection alive and handle any incoming messages
+            data = await websocket.receive_json()
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+            
     except WebSocketDisconnect:
-        notification_manager.disconnect(current_user.citizen_id)
+        # Handle disconnection
+        await websocket_manager.disconnect(current_user.citizen_id)
+    except Exception as e:
+        print(f"WebSocket error: {str(e)}")
+        await websocket_manager.disconnect(current_user.citizen_id)
