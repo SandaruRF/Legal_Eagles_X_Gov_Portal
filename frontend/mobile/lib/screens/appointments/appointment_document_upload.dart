@@ -51,7 +51,9 @@ class _AppointmentDocumentUploadScreenState
 
       // For now, we'll use mock data. In a real app, this would come from an API
       // based on the service type
-      await Future.delayed(const Duration(milliseconds: 500)); // Simulate API call
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      ); // Simulate API call
 
       setState(() {
         requiredDocuments = [
@@ -65,7 +67,8 @@ class _AppointmentDocumentUploadScreenState
           {
             'id': 'supporting_docs',
             'name': 'Supporting Documents',
-            'description': 'Any additional documents related to your application',
+            'description':
+                'Any additional documents related to your application',
             'required': false,
             'accepted_formats': ['jpg', 'jpeg', 'png', 'pdf'],
           },
@@ -89,49 +92,59 @@ class _AppointmentDocumentUploadScreenState
   Future<void> _pickFile(String documentId) async {
     try {
       final ImagePicker picker = ImagePicker();
-      
+
       // Show options for camera or gallery
       final source = await showModalBottomSheet<ImageSource>(
         context: context,
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Select Image Source',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        builder:
+            (context) => Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context, ImageSource.camera),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.camera_alt, size: 48, color: Color(0xFFFF5B00)),
-                        SizedBox(height: 8),
-                        Text('Camera'),
-                      ],
-                    ),
+                  const Text(
+                    'Select Image Source',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context, ImageSource.gallery),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.photo_library, size: 48, color: Color(0xFFFF5B00)),
-                        SizedBox(height: 8),
-                        Text('Gallery'),
-                      ],
-                    ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context, ImageSource.camera),
+                        child: const Column(
+                          children: [
+                            Icon(
+                              Icons.camera_alt,
+                              size: 48,
+                              color: Color(0xFFFF5B00),
+                            ),
+                            SizedBox(height: 8),
+                            Text('Camera'),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap:
+                            () => Navigator.pop(context, ImageSource.gallery),
+                        child: const Column(
+                          children: [
+                            Icon(
+                              Icons.photo_library,
+                              size: 48,
+                              color: Color(0xFFFF5B00),
+                            ),
+                            SizedBox(height: 8),
+                            Text('Gallery'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+            ),
       );
 
       if (source != null) {
@@ -191,23 +204,26 @@ class _AppointmentDocumentUploadScreenState
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B00)),
+      builder:
+          (context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B00)),
+                ),
+                SizedBox(height: 16),
+                Text('Booking appointment...'),
+              ],
             ),
-            SizedBox(height: 16),
-            Text('Booking appointment...'),
-          ],
-        ),
-      ),
+          ),
     );
 
     try {
       // Build URL with query parameters
-      final uri = Uri.parse('${EnvironmentConfig.baseUrl}${EnvironmentConfig.appointmentBook}').replace(
+      final uri = Uri.parse(
+        '${EnvironmentConfig.baseUrl}${EnvironmentConfig.appointmentBook}',
+      ).replace(
         queryParameters: {
           'service_id': widget.serviceId,
           'slot_id': widget.slotId,
@@ -218,7 +234,7 @@ class _AppointmentDocumentUploadScreenState
 
       // Create multipart request
       final request = http.MultipartRequest('POST', uri);
-      
+
       // Add headers
       if (authHeader != null) {
         request.headers['Authorization'] = authHeader;
@@ -237,7 +253,8 @@ class _AppointmentDocumentUploadScreenState
           final multipartFile = await http.MultipartFile.fromPath(
             'files',
             file.path,
-            filename: '${entry.key}_${DateTime.now().millisecondsSinceEpoch}.${file.path.split('.').last}',
+            filename:
+                '${entry.key}_${DateTime.now().millisecondsSinceEpoch}.${file.path.split('.').last}',
           );
           request.files.add(multipartFile);
         }
@@ -261,8 +278,15 @@ class _AppointmentDocumentUploadScreenState
         });
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-          _showSuccessDialog(responseData);
+          final responseData =
+              jsonDecode(response.body) as Map<String, dynamic>;
+          final appointment =
+              responseData['appointment'] as Map<String, dynamic>?;
+          if (appointment != null) {
+            _showSuccessDialog(appointment);
+          } else {
+            _showSuccessDialog(responseData); // fallback, should not happen
+          }
         } else {
           throw Exception(response.body);
         }
@@ -287,46 +311,58 @@ class _AppointmentDocumentUploadScreenState
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 28),
-            SizedBox(width: 8),
-            Text('Booked!'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Your appointment has been successfully booked.'),
-            const SizedBox(height: 16),
-            if (appointmentData['appointment_id'] != null)
-              Text('Appointment ID: ${appointmentData['appointment_id']}'),
-            if (appointmentData['reference_number'] != null)
-              Text('Reference: ${appointmentData['reference_number']}'),
-            const SizedBox(height: 8),
-            Text('Date: ${widget.selectedDate}'),
-            const SizedBox(height: 16),
-            const Text(
-              'Please arrive 15 minutes before your scheduled time and bring the original documents.',
-              style: TextStyle(fontStyle: FontStyle.italic),
+      builder:
+          (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 28),
+                SizedBox(width: 8),
+                Text('Booked!'),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close success dialog
-              Navigator.popUntil(
-                context,
-                (route) => route.isFirst,
-              ); // Go back to home
-            },
-            child: const Text('OK'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Your appointment has been successfully booked.'),
+                const SizedBox(height: 16),
+                if (appointmentData['appointment_id'] != null)
+                  Text('Appointment ID: ${appointmentData['appointment_id']}'),
+                if (appointmentData['reference_number'] != null)
+                  Text('Reference: ${appointmentData['reference_number']}'),
+                const SizedBox(height: 8),
+                Text('Date: ${widget.selectedDate}'),
+                if (appointmentData['approximate_duration'] != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Approximate Duration: ${appointmentData['approximate_duration']} min',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 0, 0, 0),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Please arrive 15 minutes before your scheduled time and bring the original documents.',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close success dialog
+                  Navigator.popUntil(
+                    context,
+                    (route) => route.isFirst,
+                  ); // Go back to home
+                },
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -339,26 +375,27 @@ class _AppointmentDocumentUploadScreenState
         foregroundColor: Colors.white,
       ),
       body: _buildBody(),
-      bottomNavigationBar: _areRequiredDocumentsUploaded() && !isBooking
-          ? Container(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                onPressed: _bookAppointment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF5B00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+      bottomNavigationBar:
+          _areRequiredDocumentsUploaded() && !isBooking
+              ? Container(
+                padding: const EdgeInsets.all(16),
+                child: ElevatedButton(
+                  onPressed: _bookAppointment,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5B00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Book Appointment',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
-                child: const Text(
-                  'Book Appointment',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            )
-          : null,
+              )
+              : null,
     );
   }
 
@@ -434,7 +471,10 @@ class _AppointmentDocumentUploadScreenState
               const SizedBox(height: 8),
               Text(
                 'Appointment Date: ${widget.selectedDate}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -507,7 +547,7 @@ class _AppointmentDocumentUploadScreenState
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       if (uploadedFile != null) ...[
                         // File uploaded
                         Container(
@@ -515,11 +555,16 @@ class _AppointmentDocumentUploadScreenState
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green.withOpacity(0.3)),
+                            border: Border.all(
+                              color: Colors.green.withOpacity(0.3),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.check_circle, color: Colors.green),
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -533,7 +578,10 @@ class _AppointmentDocumentUploadScreenState
                               ),
                               IconButton(
                                 onPressed: () => _removeFile(documentId),
-                                icon: const Icon(Icons.close, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.red,
+                                ),
                               ),
                             ],
                           ),

@@ -13,8 +13,8 @@ from app.db.admin import db_admin
 from app.schemas.citizen import citizen_schema
 from app.schemas.admin import admin_schema
 
-citizen_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/citizens/login")
-admin_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admins/login")
+citizen_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/citizens/login", scheme_name="UserAuth")
+admin_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admins/login", scheme_name="AdminAuth")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
