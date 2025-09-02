@@ -365,8 +365,11 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
                 response['pdf_url'].toString().isNotEmpty) {
               // Show dialog with Download PDF and Next buttons
               if (response['pdf_url'].endsWith('?')) {
-                response['pdf_url'] = response['pdf_url'].substring(0, response['pdf_url'].length - 1);
-              }              
+                response['pdf_url'] = response['pdf_url'].substring(
+                  0,
+                  response['pdf_url'].length - 1,
+                );
+              }
               print('PDF URL: ${response['pdf_url']}');
               _showPassportSuccessDialog(response['pdf_url']);
             } else {
@@ -431,7 +434,6 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
         // IMPORTANT: Adjust 'file_url' to match the key in your API's response
         return responseData['file_url'] as String?;
       } else {
-        print('File upload failed: ${response.body}');
         return null;
       }
     } catch (e) {
@@ -459,7 +461,45 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
 
     // --- Step 2: Add file URLs to your text data and submit as JSON ---
     // The backend will expect the file URLs in a specific field, e.g., 'attachments'
-    final Map<String, dynamic> finalPayload = {...textData};
+    // Mapping from frontend keys to backend expected keys
+    final Map<String, String> keyMapping = {
+      "surname": "Surname",
+      "other_names": "Other Names",
+      "street_&_house_no": "Street & house no",
+      "city": "City",
+      "district": "District",
+      "dob_date": "DOB Date",
+      "dob_month": "DOB Month",
+      "dob_year": "DOB Year",
+      "birth_certificate_no": "Birth Certificate No",
+      "birth_district": "Birth District",
+      "place_of_birth": "Place Of Birth",
+      "profession": "Profession",
+      "dual_citizenship_no": "Dual Citizenship No",
+      "phone_number": "Phone Number",
+      "email": "Email",
+      "nic_no": "NIC No",
+      "present_travel_document_number": "Present Travel Document Number",
+      "nmrp_no": "NMRP No",
+      "date_filled": "Date filled",
+      "foreign_nationality": "Foreign Nationality",
+      "foreign_passport_no": "Foreign Passport No",
+      "father/guardian_nic/passport_no":
+          "National Identity Card No/ Present Travel Document No of Father/Guardian",
+      "mother/guardian_nic/passport_no":
+          "National Identity Card No/ Present Travel Document No of Mother/Guardian",
+      "sex": "Sex",
+      "type_of_service": "Type of service",
+      "type_of_travel_document": "Type of travel document",
+      "obtained_dual_citizenship_in_sri_lanka?":
+          "Obtained dual citizenship in Sri Lanka?",
+    };
+
+    // Map textData keys to backend expected keys
+    final Map<String, dynamic> finalPayload = {
+      for (var entry in textData.entries)
+        keyMapping[entry.key] ?? entry.key: entry.value,
+    };
 
     try {
       final uri = Uri.parse(
@@ -478,7 +518,7 @@ class _DynamicFormScreenState extends ConsumerState<DynamicFormScreen> {
           'form_data': finalPayload,
         }), // Structure matches the API doc
       );
-
+      print(jsonEncode({'form_data': finalPayload}));
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
