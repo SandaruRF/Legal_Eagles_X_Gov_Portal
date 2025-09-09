@@ -253,6 +253,7 @@ async def answer_search_for_help(query: SearchQueryForHelp):
     try:
         form_id = "S001"
         passport_form_template = await get_form_template(form_id) # type: ignore
+        print("passport_form_template:",passport_form_template)
         form_id = "S002"
         medical_form_template= await get_form_template(form_id)
         page_info={
