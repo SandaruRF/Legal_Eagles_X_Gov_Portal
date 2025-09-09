@@ -42,6 +42,7 @@ class SearchResponse(BaseModel):
 
 async def search_Answer(query: SearchQuery):
     try:
+        print("hi")
         await db.connect()
         messages = await db.messagelog.find_many(
             where={"citizen_id": "C0"},
@@ -59,7 +60,8 @@ async def search_Answer(query: SearchQuery):
         ]
         kb_service = KnowledgeBaseService()
         results = await kb_service.search(query.text, query.limit)
-        system_features = ["driving license medical form filling"]
+        print(results)
+        system_features = ["driving license medical form filling","KYC document verification","digital id","chatbot assistance","booking and scheduling"]
         about="""This application provides information about government services, procedures, and related topics. It aims to assist users in finding relevant information quickly and efficiently."""
         # Convert ChromaDB results to API response
         search_results = []
@@ -102,7 +104,7 @@ this is the recent chat history : {history} """
         print("Gemini API Key:", settings.GEMINI_API_KEY)
         genai.configure(api_key=settings.GEMINI_API_KEY)
         # print(list(genai.list_models()))
-        model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
         gemini_response = model.generate_content(prompt)
 
         import re
@@ -216,7 +218,7 @@ this is the recent chat history : {history}
         print("Gemini API Key:", settings.GEMINI_API_KEY)
         genai.configure(api_key=settings.GEMINI_API_KEY)
         # print(list(genai.list_models()))
-        model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
         gemini_response = model.generate_content(prompt)
 
         import re
@@ -261,6 +263,7 @@ async def answer_search_for_help(query: SearchQueryForHelp):
         }
         kb_service = KnowledgeBaseService()
         results = await kb_service.search(query.text, query.limit)
+        print("results",results)
         system_features = ["driving license medical form filling","passport application filling"]
         about="""This application provides information about government services, procedures, and related topics. It aims to assist users in finding relevant information quickly and efficiently."""
         print("current page: ", query.page)
@@ -307,7 +310,7 @@ Always:
         print("Gemini API Key:", settings.GEMINI_API_KEY)
         genai.configure(api_key=settings.GEMINI_API_KEY)
         # print(list(genai.list_models()))
-        model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
         gemini_response = model.generate_content(prompt)
         final_response = gemini_response.text if hasattr(gemini_response, "text") else str(gemini_response)
         
@@ -337,7 +340,7 @@ async def services_get_latest_messages():
         prompt += f"{idx}. {msg}\n"
 
     genai.configure(api_key=settings.GEMINI_API_KEY)
-    model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
+    model = genai.GenerativeModel("models/gemini-1.5-flash")
     gemini_response = model.generate_content(prompt)
     response_text = gemini_response.text.strip()
 
